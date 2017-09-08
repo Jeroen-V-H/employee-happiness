@@ -18,6 +18,8 @@
 		businessField,
 		improvementsField;
 
+	let employees = [];
+
 	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
 	// https://gka.github.io/palettes/#colors=#c00,#fc0|steps=4|bez=1|coL=1
 	const colors = ['#cc0000','#cc0000','#cc0000','#e06000','#f19800','#ffcc00','#b9b400','#709b00','#008000'],
@@ -168,7 +170,7 @@
 	* @returns {undefined}
 	*/
 	const processData = function(rawData) {
-		console.log(rawData);
+		// console.log(rawData);
 		setQuestionFields(rawData.columns);
 		let data = rawData;
 		return data;
@@ -258,7 +260,8 @@
 	*/
 	var loadData = function() {
 		d3.queue()
-			.defer(d3.csv, 'data/happiness.csv')
+			// .defer(d3.csv, 'data/happiness.csv')
+			.defer(d3.csv, 'data/happiness-one-period.csv')
 			.await(loadHandler);
 	};
 
