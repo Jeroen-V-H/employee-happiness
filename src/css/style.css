@@ -1,0 +1,150 @@
+
+/*-- Start reset --*/
+	a,abbr,acronym,address,applet,article,aside,audio,b,big,blockquote,body,button,graph,caption,cite,code,dd,del,details,dfn,div,dl,dt,em,embed,fieldset,figcaption,figure,footer,h1,h2,h3,h4,h5,h6,header,hgroup,html,i,iframe,img,input,ins,kbd,label,legend,li,mark form,menu,nav,object,ol,option,output,p,pre,q,ruby,s,samp,section,select,small,span,strike,strong,sub,summary,sup,table,tbody,td,textarea,tfoot,th,thead,time,tr,tt,u,ul,var,video{margin:0;border:0;padding:0;font:inherit;vertical-align:baseline}article,aside,details,figcaption,figure,footer,header,hgroup,menu,nav,section{display:block}blockquote,q{quotes:none}blockquote:after,blockquote:before,q:after,q:before{content:'';content:none}table{border-collapse:collapse;border-spacing:0}
+	button,input[type=checkbox],input[type=image],input[type=radio],input[type=submit],label{cursor:pointer}
+	strong{font-weight:700}
+	em{font-style:italic}
+	.fList{list-style:none}
+	sub, sup {font-size: 0.8em;vertical-align:sub;}
+	sup { vertical-align: super;}
+/*-- End reset --*/
+
+:root {
+	--indicator-translation: -80px;
+}
+
+html {
+	font-size: 62.5%;/* 10px */
+}
+
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 1.6rem;
+	line-height: 1.5;
+}
+
+h1 {
+	font-size: 3.2rem;
+	font-weight: bold;
+}
+
+h2 {
+	font-size: 2.4rem;
+	font-weight: bold;
+}
+
+button {
+	display: inline-block;
+	margin: 0.5em;
+	padding: 0.5em;
+}
+
+svg {
+	margin: 0 20px;
+	background: #f1f1f1;
+}
+
+#defsHolder {
+	height: 0;
+	width: 0;
+}
+
+.options {
+	float: right;
+}
+
+.canvas {
+	position: relative;
+	margin: 100px;
+	width: 720px;
+	height: 720px;
+}
+
+
+.graph {
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+.graph::before,
+.graph::after {
+	display: block;
+	content: '';
+	position: absolute;
+	width: 100%;
+	height: 0;
+	top: 50%;
+	left: 0;
+	border: 1px solid #ccc;
+}
+.graph::after {
+	transform: rotate(90deg);
+}
+
+.employee-node {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 1;
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+	background: #ccc;
+	background: #00bdfa;
+	color: white;
+	transform: translate(-50%, -50%);
+}
+
+.employee-node::after {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	text-align: center;
+	content: attr(data-initials);
+	transform: translate(-50%, -50%);
+}
+
+/*.employee-node::before {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	text-align: center;
+	content: attr(data-health-score);
+	transform: translate(-50%, 0%);
+}*/
+
+.indicator {
+	position: absolute;
+	font-size: 3rem;
+	text-align: center;
+	filter: sepia() saturate(0);
+}
+
+.indicator--happy,
+.indicator--unhappy {
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.indicator--unhappy {
+	left: var(--indicator-translation);
+}
+
+.indicator--happy {
+	right: var(--indicator-translation);
+}
+
+.indicator--busy,
+.indicator--bored {
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.indicator--busy {
+	top: var(--indicator-translation);
+}
+
+.indicator--bored {
+	bottom: var(--indicator-translation);
+}
