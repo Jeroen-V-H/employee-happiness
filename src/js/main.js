@@ -5,20 +5,18 @@
 	/* globals zup */ //Tell jshint zup exists as global var
 
 
-
-
 	const graphElm = document.getElementById('graph'),
 		width = graphElm.clientWidth,
 		height = graphElm.clientHeight,
-		nodeRadius = 25,
-		nodeDistance = 3,
 		forceStrength = 0.1,
 		simulationDuration = 2000;
 	
-	const emailField ="Email Address",
-		nameField ="What is your name?",
-		happinessField ="How happy are you with the work you're doing ",
-		businessField ="How busy are you at the moment ";
+	let timestampField,
+		emailField,
+		nameField,
+		happinessField,
+		businessField,
+		improvementsField;
 
 	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
 	// https://gka.github.io/palettes/#colors=#c00,#fc0|steps=4|bez=1|coL=1
@@ -29,7 +27,9 @@
 		businessScale = d3.scaleLinear().domain([1, 5]).range([height, 0]);
 
 	let simulationTimer,
-		employeeNodes;
+		employeeNodes,
+		nodeRadius = 25,// will be calculated by js
+		nodeDistance = 3;
 
 	let graph = d3.select('#graph')
 			.attr('width', width)
@@ -52,9 +52,8 @@
 		});
 
 	let simulation = d3.forceSimulation()
-		// .force('forceX', d3.forceX(width / 2).strength(forceStrength))
 		.force('forceX', forceXCombined)
-		.force('forceY', d3.forceY(height / 2).strength(forceStrength))
+		.force('forceY', forceYCombined)
 		.force('collide', forceCollide);
 
 
@@ -80,6 +79,7 @@
 
 		return initials;
 	};
+
 
 
 	/**
@@ -110,80 +110,146 @@
 				maxBusinessScore = Math.max(...businessScores),
 				minHealthScore = minHappinessScore + minBusinessScore,
 				maxHealthScore = maxHappinessScore + maxBusinessScore;
-			console.log(minHealthScore, maxHealthScore);
 
 			// minHealthScore should have colorIdx 0
-			// const correction = 
 			const colorIdx = d.healthScore - minHealthScore;
 			return colors[colorIdx];
 		});
+	};
+
+
+
+	/**
+	* initialize interface
+	* @returns {undefined}
+	*/
+	const initInterface = function() {
+		// initButtons
+		d3.select('#show-mood').on('click', function() {
+			setHealthColors();
+
+			simulation
+				.force('forceX', forceXHappiness)
+				.force('forceY', forceYBusiness)
+				.alphaTarget(0.5)
+				.restart();
+			scheduleSimulationStop();
+		});
+
+		d3.select('#combined').on('click', function() {
+			simulation
+				.force('forceX', forceXCombined)
+				.force('forceY', forceYCombined)
+				.alphaTarget(0.5)
+				.restart();
+			scheduleSimulationStop();
+		});
+	};
+
+
+	/**
+	* create variables for the questions in the questionaire
+	* @returns {undefined}
+	*/
+	const setQuestionFields = function(questions) {
+		timestampField = questions[0];
+		emailField = questions[1];
+		nameField = questions[2];
+		happinessField = questions[3];
+		businessField = questions[4];
+		improvementsField = questions[5];
+	};
+	
+
+
+
+	/**
+	* process the data so we can use it
+	* @returns {undefined}
+	*/
+	const processData = function(rawData) {
+		console.log(rawData);
+		setQuestionFields(rawData.columns);
+		let data = rawData;
+		return data;
+	};
+
+
+	/**
+	* handle simulation tic
+	* @returns {undefined}
+	*/
+	const tickHandler = function(nodes) {
+		nodes.style('left', function(d) {
+				return d.x + 'px';
+			})
+			.style('top', function(d) {
+				return d.y + 'px';
+			})
+	};
+
+
+
+	/**
+	* schedule the stopping of the animation
+	* @returns {undefined}
+	*/
+	const scheduleSimulationStop = function() {
+		clearTimeout(simulationTimer);
+		simulationTimer = setTimeout(() => {
+			simulation.stop();
+		}, simulationDuration);
 	};
 	
 	
 
 
-	function ready(error, datapoints) {
 
-		// initButtons
-		d3.select('#show-mood').on('click', function() {
-			let sim = simulation
-				.force('forceX', forceXHappiness)
-				.force('forceY', forceYBusiness)
-				.alphaTarget(0.5)
-				.restart();
-
-			setHealthColors();
-
-			clearTimeout(simulationTimer);
-			simulationTimer = setTimeout(() => {
-				sim.stop();
-			}, simulationDuration);
-		});
-
-		d3.select('#combined').on('click', function() {
-			let sim = simulation
-				.force('forceX', forceXCombined)
-				.force('forceY', forceYCombined)
-				.alphaTarget(0.5)
-				.restart();
-
-			clearTimeout(simulationTimer);
-			simulationTimer = setTimeout(() => {
-				sim.stop();
-			}, simulationDuration);
-		});
-
-
+	/**
+	* draw the actual graph
+	* @returns {undefined}
+	*/
+	const drawGraph = function(data) {
 		// add shapes
 		employeeNodes = graph.selectAll('.employee-node')
-			.data(datapoints)
+			.data(data)
 			.enter()
 			.append('div')
 			.attr('data-initials', getInitials)
+			.attr('data-happiness', (d) => {
+				return d[happinessField];
+			})
+			.attr('data-business', (d) => {
+				return d[businessField];
+			})
 			.attr('data-health-score', calculateHealthScore)
 			.attr('class', 'employee-node')
 			.on('mouseover', function(d) {
 				// console.log(d.name, d.happiness, d.business);
 			})
 
-		simulation.nodes(datapoints)
-			.on('tick', ticked);
+		// now that we have nodes on screen, we can check their dimensions
+		let typicalNode = graph.select('.employee-node:first-child').node();
+		nodeRadius = typicalNode.getBoundingClientRect().width/2,
+		nodeDistance = nodeRadius * 0.05;
 
-		clearTimeout(simulationTimer);
-		simulationTimer = setTimeout(() => {
-			simulation.stop();
-		}, simulationDuration);
+		simulation.nodes(data)
+			.on('tick', () => { tickHandler(employeeNodes) });
+		scheduleSimulationStop();
+	};
+	
+	
 
-		function ticked() {
-			employeeNodes
-				.style('left', function(d) {
-					return d.x + 'px';
-				})
-				.style('top', function(d) {
-					return d.y + 'px';
-				})
-		}
-	}// ready
+	/**
+	* handle data being loaded
+	* @returns {undefined}
+	*/
+	const loadHandler = function(error, rawData) {
+		initInterface();
+		let data = processData(rawData);
+		drawGraph(data);
+	}// loadHandler
+
 
 
 	/**
@@ -193,7 +259,7 @@
 	var loadData = function() {
 		d3.queue()
 			.defer(d3.csv, 'data/happiness.csv')
-			.await(ready);
+			.await(loadHandler);
 	};
 
 
@@ -206,6 +272,7 @@
 	const init = function() {
 		loadData();// load data and kick things off
 	};
+
 
 	// kick of the script when all dom content has loaded
 	document.addEventListener('DOMContentLoaded', init);
