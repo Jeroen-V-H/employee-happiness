@@ -21,13 +21,21 @@
 		improvementsField;
 
 	let employeeEmails = [],
-		employees = [];
+		employees = [],
+		currPeriodIdx = 0,
+		totalPeriods = 0;
 
 	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
 	// https://gka.github.io/palettes/#colors=#c00,#fc0|steps=4|bez=1|coL=1
 	const colors = ['#cc0000','#cc0000','#cc0000','#e06000','#f19800','#ffcc00','#b9b400','#709b00','#008000'],
 		happinessScores = [-4, -2, 0, 1, 2],
 		businessScores = [-2, -1, 0, -1, -2],
+		minHappinessScore = Math.min(...happinessScores),
+		maxHappinessScore = Math.max(...happinessScores),
+		minBusinessScore = Math.min(...businessScores),
+		maxBusinessScore = Math.max(...businessScores),
+		minHealthScore = minHappinessScore + minBusinessScore,
+		maxHealthScore = maxHappinessScore + maxBusinessScore,
 		happinessScale = d3.scaleLinear().domain([1, 5]).range([0, width]),
 		businessScale = d3.scaleLinear().domain([1, 5]).range([height, 0]);
 
@@ -42,11 +50,11 @@
 
 	// define force functions
 	const forceXHappiness = d3.forceX(function(d) {
-		return happinessScale(d[happinessField]);
+		return happinessScale(d.periods[currPeriodIdx].happiness);
 	}).strength(forceStrength);
 
 	const forceYBusiness = d3.forceY(function(d) {
-		return businessScale(d[businessField]);
+		return businessScale(d.periods[currPeriodIdx].business);
 	}).strength(forceStrength);
 
 	const forceXCombined = d3.forceX(width / 2).strength(forceStrength),
@@ -116,12 +124,26 @@
 	* get an employee's health score
 	* @returns {undefined}
 	*/
-	const calculateHealthScore = function(d) {
-		const happinessScore = happinessScores[d[happinessField] -1],
-			businessScore = businessScores[d[businessField] -1],
+	const calculateHealthScore_bak = function(d) {
+		const period = d.periods[currPeriodIdx],
+			happinessScore = happinessScores[+period.happiness -1],
+			businessScore = businessScores[+period.business -1],
 			healthScore = happinessScore + businessScore,
 			colorIdx = healthScore + 6;
 		d.healthScore = healthScore;
+
+		return healthScore;
+	};
+
+
+	/**
+	* get an employee's health score
+	* @returns {undefined}
+	*/
+	const calculateHealthScore = function(happiness, business) {
+		const happinessScore = happinessScores[happiness -1],
+			businessScore = businessScores[business -1],
+			healthScore = happinessScore + businessScore;
 
 		return healthScore;
 	};
@@ -132,20 +154,52 @@
 	* 
 	* @returns {undefined}
 	*/
-	const setHealthColors = function() {
+	const setHealthColors_bak = function() {
 		employeeNodes.style('background', function(d) {
-			const minHappinessScore = Math.min(...happinessScores),
-				maxHappinessScore = Math.max(...happinessScores),
-				minBusinessScore = Math.min(...businessScores),
-				maxBusinessScore = Math.max(...businessScores),
-				minHealthScore = minHappinessScore + minBusinessScore,
-				maxHealthScore = maxHappinessScore + maxBusinessScore;
 
 			// minHealthScore should have colorIdx 0
 			const colorIdx = d.healthScore - minHealthScore;
 			return colors[colorIdx];
 		});
 	};
+
+
+	/**
+	* 
+	* @returns {undefined}
+	*/
+	const setHealthColors = function() {
+		employeeNodes.style('background', function(d) {
+			const periodHealthScore = d.periods[currPeriodIdx].health;
+
+			// minHealthScore should have colorIdx 0
+			const colorIdx = periodHealthScore - minHealthScore;
+			return colors[colorIdx];
+		});
+	};
+
+
+
+
+	/**
+	* 
+	* @returns {undefined}
+	*/
+	const changePeriod = function(increment = 0) {
+			const newPeriodIdx = currPeriodIdx + increment;
+			if (newPeriodIdx >= 0 && newPeriodIdx < totalPeriods) {
+				currPeriodIdx = newPeriodIdx;
+			}
+			setHealthColors();
+
+			simulation
+				.force('forceX', forceXHappiness)
+				.force('forceY', forceYBusiness)
+				.alphaTarget(0.5)
+				.restart();
+			scheduleSimulationStop();
+	};
+	
 
 
 
@@ -156,14 +210,15 @@
 	const initInterface = function() {
 		// initButtons
 		d3.select('#show-mood').on('click', function() {
-			setHealthColors();
+			changePeriod();
+		});
 
-			simulation
-				.force('forceX', forceXHappiness)
-				.force('forceY', forceYBusiness)
-				.alphaTarget(0.5)
-				.restart();
-			scheduleSimulationStop();
+		d3.select('#show-next-period').on('click', function() {
+			changePeriod(+1);
+		});
+
+		d3.select('#show-prev-period').on('click', function() {
+			changePeriod(-1);
 		});
 
 		d3.select('#combined').on('click', function() {
@@ -261,10 +316,14 @@
 			// now do stuff for both just and previously added employees
 			employee = employees[employeeIndex];
 
-			const mood = {
-				happiness: employeeRow[fields.happiness],
-				business: employeeRow[fields.business]
-			}
+			const happiness = +employeeRow[fields.happiness],
+				business = +employeeRow[fields.business],
+				health = calculateHealthScore(happiness, business),
+				mood = {
+					happiness,
+					business,
+					health
+				};
 			// I'm still assuming that every employee is present in every period.
 			employee.periods.push(mood);
 			// employees.push(employee);
@@ -282,6 +341,7 @@
 	*/
 	const processData = function(rawDatasets) {
 		// console.log(rawData);
+		totalPeriods = rawDatasets.length;
 		setQuestionFields(rawDatasets[0].columns);
 
 		let weekNumber = 35
@@ -426,6 +486,8 @@
 			// });
 
 			// .defer(d3.csv, 'data/happiness.csv')
+			.defer(d3.csv, 'data/happiness-wk33.csv')
+			.defer(d3.csv, 'data/happiness-wk34.csv')
 			.defer(d3.csv, 'data/happiness-wk35.csv')
 			.defer(d3.csv, 'data/happiness-wk36.csv')
 			.await(loadHandler);
