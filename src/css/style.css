@@ -44,6 +44,16 @@ button {
 	float: right;
 }
 
+.week-number {
+	color: #666;
+	text-align: center;
+	text-transform: uppercase;
+}
+
+.week-number__value {
+	font-size: 3.2rem;
+}
+
 .canvas {
 	position: relative;
 	margin: 100px;

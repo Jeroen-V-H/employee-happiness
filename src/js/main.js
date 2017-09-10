@@ -22,7 +22,7 @@
 
 	let employeeEmails = [],
 		employees = [],
-		currPeriodIdx = 0,
+		currPeriodIdx = -1,
 		totalPeriods = 0;
 
 	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
@@ -96,47 +96,6 @@
 
 
 	/**
-	* get employee's initials
-	* @returns {undefined}
-	*/
-	const getInitialsFromDataPoint = function(d) {
-		const parts = d[emailField].split('@')[0].split('.'),
-			nonCaps = [
-				'de', 'den', 'der', 'van', 'op', 't'
-			];
-		let initials = '';
-
-		parts.forEach((part) => {
-			let char = part.charAt(0).toLowerCase();
-			if (nonCaps.indexOf(part) === -1) {
-				char = char.toUpperCase();
-			}
-			initials += char;
-		});
-
-		return initials;
-	};
-	
-
-
-
-	/**
-	* get an employee's health score
-	* @returns {undefined}
-	*/
-	const calculateHealthScore_bak = function(d) {
-		const period = d.periods[currPeriodIdx],
-			happinessScore = happinessScores[+period.happiness -1],
-			businessScore = businessScores[+period.business -1],
-			healthScore = happinessScore + businessScore,
-			colorIdx = healthScore + 6;
-		d.healthScore = healthScore;
-
-		return healthScore;
-	};
-
-
-	/**
 	* get an employee's health score
 	* @returns {undefined}
 	*/
@@ -148,21 +107,6 @@
 		return healthScore;
 	};
 	
-
-
-	/**
-	* 
-	* @returns {undefined}
-	*/
-	const setHealthColors_bak = function() {
-		employeeNodes.style('background', function(d) {
-
-			// minHealthScore should have colorIdx 0
-			const colorIdx = d.healthScore - minHealthScore;
-			return colors[colorIdx];
-		});
-	};
-
 
 	/**
 	* 
@@ -190,6 +134,10 @@
 			if (newPeriodIdx >= 0 && newPeriodIdx < totalPeriods) {
 				currPeriodIdx = newPeriodIdx;
 			}
+			if (newPeriodIdx < 0) {
+				// we start at -1 to make first call to show next show the first period
+				currPeriodIdx = 0;
+			}
 			setHealthColors();
 
 			simulation
@@ -198,6 +146,8 @@
 				.alphaTarget(0.5)
 				.restart();
 			scheduleSimulationStop();
+
+			document.getElementById('week-number__value').textContent = firstWeekNumber + currPeriodIdx;
 	};
 	
 
@@ -229,6 +179,8 @@
 				.restart();
 			scheduleSimulationStop();
 		});
+
+
 	};
 
 
@@ -264,27 +216,6 @@
 		return fields;
 	};
 	
-
-
-
-	/**
-	* process the data so we can use it
-	* @returns {undefined}
-	*/
-	const processData_ = function(rawDatasets) {
-		// console.log(rawData);
-		setQuestionFields(rawDatasets[0].columns);
-
-		// loop through all data
-		// determine all employees (unique identifier: email)
-		// determine all periods
-		// create new array
-		// create object for every employee
-		// for every period, 
-
-		let data = rawData;
-		return data;
-	};
 
 
 	/**
@@ -383,42 +314,6 @@
 	};
 	
 	
-
-
-
-	/**
-	* draw the actual graph
-	* @returns {undefined}
-	*/
-	const drawGraph_ = function(data) {
-		// add shapes
-		employeeNodes = graph.selectAll('.employee-node')
-			.data(data)
-			.enter()
-			.append('div')
-			.attr('data-initials', getInitialsFromDataPoint)
-			.attr('data-happiness', (d) => {
-				return d[happinessField];
-			})
-			.attr('data-business', (d) => {
-				return d[businessField];
-			})
-			.attr('data-health-score', calculateHealthScore)
-			.attr('class', 'employee-node')
-			.on('mouseover', function(d) {
-				// console.log(d.name, d.happiness, d.business);
-			})
-
-		// now that we have nodes on screen, we can check their dimensions
-		let typicalNode = graph.select('.employee-node:first-child').node();
-		nodeRadius = typicalNode.getBoundingClientRect().width/2,
-		nodeDistance = nodeRadius * 0.05;
-
-		simulation.nodes(data)
-			.on('tick', () => { tickHandler(employeeNodes) });
-		scheduleSimulationStop();
-	};
-
 
 	/**
 	* draw the actual graph
