@@ -10,6 +10,8 @@
 		height = graphElm.clientHeight,
 		forceStrength = 0.1,
 		simulationDuration = 2000;
+
+	const firstWeekNumber = 33;// number of the first week in the data
 	
 	let timestampField,
 		emailField,
@@ -18,7 +20,8 @@
 		businessField,
 		improvementsField;
 
-	let employees = [];
+	let employeeEmails = [],
+		employees = [];
 
 	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
 	// https://gka.github.io/palettes/#colors=#c00,#fc0|steps=4|bez=1|coL=1
@@ -64,7 +67,31 @@
 	* get employee's initials
 	* @returns {undefined}
 	*/
-	const getInitials = function(d) {
+	const getInitials = function(email) {
+		const parts = email.split('@')[0].split('.'),
+			nonCaps = [
+				'de', 'den', 'der', 'van', 'op', 't'
+			];
+		let initials = '';
+
+		parts.forEach((part) => {
+			let char = part.charAt(0).toLowerCase();
+			if (nonCaps.indexOf(part) === -1) {
+				char = char.toUpperCase();
+			}
+			initials += char;
+		});
+
+		return initials;
+	};
+
+
+
+	/**
+	* get employee's initials
+	* @returns {undefined}
+	*/
+	const getInitialsFromDataPoint = function(d) {
 		const parts = d[emailField].split('@')[0].split('.'),
 			nonCaps = [
 				'de', 'den', 'der', 'van', 'op', 't'
@@ -81,6 +108,7 @@
 
 		return initials;
 	};
+	
 
 
 
@@ -161,6 +189,25 @@
 		businessField = questions[4];
 		improvementsField = questions[5];
 	};
+
+
+	/**
+	* create get the exact wording of the questions in this period's questionaire
+	* wording may change; order of the topics should remain the same
+	* @returns {object} fields with corresponding question
+	*/
+	const getPeriodQuestionFields = function(questions) {
+		const fields = {
+			timestamp: questions[0],
+			email: questions[1],
+			name: questions[2],
+			happiness: questions[3],
+			business: questions[4],
+			improvements: questions[5]
+		};
+
+		return fields;
+	};
 	
 
 
@@ -169,10 +216,82 @@
 	* process the data so we can use it
 	* @returns {undefined}
 	*/
-	const processData = function(rawData) {
+	const processData_ = function(rawDatasets) {
 		// console.log(rawData);
-		setQuestionFields(rawData.columns);
+		setQuestionFields(rawDatasets[0].columns);
+
+		// loop through all data
+		// determine all employees (unique identifier: email)
+		// determine all periods
+		// create new array
+		// create object for every employee
+		// for every period, 
+
 		let data = rawData;
+		return data;
+	};
+
+
+	/**
+	* process dataset of 1 period
+	* @returns {undefined}
+	*/
+	const processPeriodData = function(dataset, weekNumber) {
+		const fields = getPeriodQuestionFields(dataset.columns);
+
+		dataset.forEach((employeeRow) => {
+			const email = employeeRow[fields.email]
+			let employee;
+
+			//check if employee is already in employees-array
+			// d3 works easier with normal arrays than with associative ones, so I can't use email as array-index
+			let employeeIndex = employeeEmails.indexOf(email);
+			if (employeeIndex === -1) {
+				employee = {
+					email: email,
+					name: employeeRow[fields.name],
+					initials: getInitials(email),
+					periods: []
+				};
+				employees.push(employee);
+				employeeEmails.push(email);// this way, index in emails array corresponds with the one in employees array
+				employeeIndex = employees.length -1;
+			}
+
+			// now do stuff for both just and previously added employees
+			employee = employees[employeeIndex];
+
+			const mood = {
+				happiness: employeeRow[fields.happiness],
+				business: employeeRow[fields.business]
+			}
+			// I'm still assuming that every employee is present in every period.
+			employee.periods.push(mood);
+			// employees.push(employee);
+
+		});
+	};
+	
+	
+
+
+
+	/**
+	* process the data so we can use it
+	* @returns {undefined}
+	*/
+	const processData = function(rawDatasets) {
+		// console.log(rawData);
+		setQuestionFields(rawDatasets[0].columns);
+
+		let weekNumber = 35
+
+		// loop through all data
+		rawDatasets.forEach((dataset) => {
+			processPeriodData(dataset);
+		});
+
+		let data = rawDatasets[0];
 		return data;
 	};
 
@@ -211,18 +330,56 @@
 	* draw the actual graph
 	* @returns {undefined}
 	*/
-	const drawGraph = function(data) {
+	const drawGraph_ = function(data) {
 		// add shapes
 		employeeNodes = graph.selectAll('.employee-node')
 			.data(data)
 			.enter()
 			.append('div')
-			.attr('data-initials', getInitials)
+			.attr('data-initials', getInitialsFromDataPoint)
 			.attr('data-happiness', (d) => {
 				return d[happinessField];
 			})
 			.attr('data-business', (d) => {
 				return d[businessField];
+			})
+			.attr('data-health-score', calculateHealthScore)
+			.attr('class', 'employee-node')
+			.on('mouseover', function(d) {
+				// console.log(d.name, d.happiness, d.business);
+			})
+
+		// now that we have nodes on screen, we can check their dimensions
+		let typicalNode = graph.select('.employee-node:first-child').node();
+		nodeRadius = typicalNode.getBoundingClientRect().width/2,
+		nodeDistance = nodeRadius * 0.05;
+
+		simulation.nodes(data)
+			.on('tick', () => { tickHandler(employeeNodes) });
+		scheduleSimulationStop();
+	};
+
+
+	/**
+	* draw the actual graph
+	* @returns {undefined}
+	*/
+	const drawGraph = function() {
+		let data = employees;
+		// add shapes
+		console.log(employees);
+		employeeNodes = graph.selectAll('.employee-node')
+			.data(data)
+			.enter()
+			.append('div')
+			.attr('data-initials', d => d.initials)
+			.attr('data-happiness', (d) => {
+				const firstPeriod = d.periods[0];
+				return firstPeriod.happiness;
+			})
+			.attr('data-business', (d) => {
+				const firstPeriod = d.periods[0];
+				return firstPeriod.business;
 			})
 			.attr('data-health-score', calculateHealthScore)
 			.attr('class', 'employee-node')
@@ -246,9 +403,9 @@
 	* handle data being loaded
 	* @returns {undefined}
 	*/
-	const loadHandler = function(error, rawData) {
+	const loadHandler = function(error, ...rawDatasets) {
 		initInterface();
-		let data = processData(rawData);
+		let data = processData(rawDatasets);
 		drawGraph(data);
 	}// loadHandler
 
@@ -260,8 +417,17 @@
 	*/
 	var loadData = function() {
 		d3.queue()
+			//https://stackoverflow.com/questions/36090611/how-to-parse-a-csv-file-with-d3-when-parser-is-not-the-comma
+			// var ssv = d3.dsv(";", "text/plain");
+
+			// // Load and (later, asynchronously) parse the data
+			// ssv(url, function(data) {
+			//   console.log(data); // should log an array of parsed values
+			// });
+
 			// .defer(d3.csv, 'data/happiness.csv')
-			.defer(d3.csv, 'data/happiness-one-period.csv')
+			.defer(d3.csv, 'data/happiness-wk35.csv')
+			.defer(d3.csv, 'data/happiness-wk36.csv')
 			.await(loadHandler);
 	};
 
