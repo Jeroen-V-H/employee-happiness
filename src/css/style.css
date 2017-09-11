@@ -96,6 +96,12 @@ button {
 	color: white;
 	font-size: 1.4rem;
 	transform: translate(-50%, -50%);
+	transition: transform 0.3s;
+}
+
+.employee-node.not-from-this-week {
+	opacity: 0.4;
+	transform: translate(-50%, -50%) scale(0.75);
 }
 
 .employee-node::after {

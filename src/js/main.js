@@ -11,11 +11,12 @@
 		forceStrength = 0.1,
 		simulationDuration = 2000;
 
-	const firstWeekNumber = 33;// number of the first week in the data
+	const firstWeekNumber = 32;// number of the first week in the data
 	
 	let employeeEmails = [],
 		employees = [],
 		currPeriodIdx = -1,
+		prevPeriodIdx = 0,
 		totalPeriods = 0;
 
 	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
@@ -117,6 +118,18 @@
 
 
 
+	/**
+	* set how recent an entry is
+	* @returns {undefined}
+	*/
+	const setRecentness = function() {
+		employeeNodes.classed('not-from-this-week', (d) => {
+			return (!d.periods[currPeriodIdx].isFromThisWeek);
+		});
+	};
+	
+
+
 
 	/**
 	* 
@@ -132,6 +145,7 @@
 				currPeriodIdx = 0;
 			}
 			setHealthColors();
+			setRecentness();
 
 			simulation
 				.force('forceX', forceXHappiness)
@@ -189,6 +203,40 @@
 
 		return avgObj;
 	};
+
+
+	/**
+	* for new employees, add dummy moods for the periods where they weren't present yet
+	* @returns {undefined}
+	*/
+	const addNewEmployeeDummyMoods = function(employee, mood, periodIdx) {
+		const dummyMood = Object.assign({}, mood, { isFromThisWeek: false});
+		for (let i=0; i<periodIdx; i++) {
+			employee.periods.push(dummyMood);
+		}
+	};
+
+
+	/**
+	* add moods for employees that already have an entry, but are not in the current period
+	* @returns {undefined}
+	*/
+	const addMissingEmployeeMoods = function(dataset, periodIdx) {
+		employees.forEach((employee) => {
+			const periods = employee.periods,
+				periodCount = periods.length;
+
+			if (periodCount <= periodIdx) {
+				// we're missing periods; take the last known mood as reference
+				const dummyMood = Object.assign({}, periods[periodCount-1], {isFromThisWeek: false});
+				for (let i=periodCount; i <= periodIdx; i++) {
+					periods.push(dummyMood);
+				}
+			}
+		});
+	};
+	
+	
 	
 	
 
@@ -197,7 +245,7 @@
 	* process dataset of 1 period
 	* @returns {undefined}
 	*/
-	const processPeriodData = function(dataset, weekNumber) {
+	const processPeriodData = function(dataset, periodIdx) {
 		const fields = getPeriodQuestionFields(dataset.columns);
 		let teamHappiness = 0,
 			teamBusiness = 0,
@@ -205,7 +253,8 @@
 
 		dataset.forEach((employeeRow) => {
 			const email = employeeRow[fields.email]
-			let employee;
+			let employee,
+				isNewlyAdded = false;
 
 			//check if employee is already in employees-array
 			// d3 works easier with normal arrays than with associative ones, so I can't use email as array-index
@@ -220,6 +269,7 @@
 				employees.push(employee);
 				employeeEmails.push(email);// this way, index in emails array corresponds with the one in employees array
 				employeeIndex = employees.length -1;
+				isNewlyAdded = true;
 			}
 
 			// now do stuff for both just and previously added employees
@@ -231,9 +281,14 @@
 				mood = {
 					happiness,
 					business,
-					health
+					health,
+					isFromThisWeek: true
 				};
 			// I'm still assuming that every employee is present in every period.
+
+			if (isNewlyAdded) {
+				addNewEmployeeDummyMoods(employee, mood, periodIdx);
+			}
 			employee.periods.push(mood);
 
 			teamHappiness += happiness;
@@ -247,8 +302,12 @@
 				happiness: (teamHappiness/numEntries).toFixed(1),
 				business: (teamBusiness/numEntries).toFixed(1),
 				health: (teamHealth/numEntries).toFixed(1),
+				isFromThisWeek: true
 			};
 		avgObj.periods.push(mood);
+
+		// add moods for employees that were in previous periods, but not in this one
+		addMissingEmployeeMoods(dataset, periodIdx);
 	};
 	
 
@@ -261,14 +320,25 @@
 		totalPeriods = rawDatasetStrings.length;
 		const ssv = d3.dsvFormat(';');// define semicolon separated value parser
 
-		let weekNumber = 35
-
 		// loop through all data
-		rawDatasetStrings.forEach((datasetString) => {
+		rawDatasetStrings.forEach((datasetString, periodIdx) => {
 			const dataset = ssv.parse(datasetString);
-			processPeriodData(dataset);
+			processPeriodData(dataset, periodIdx);
 		});
 	};
+
+
+	/**
+	* show an employee's detail info
+	* @returns {undefined}
+	* @param {d3 selection} employee - The employee's object
+	*/
+	const showEmployeeDetails = function(employee) {
+		// const email = d[d.column] employeeIndex = employeeEmails.indexOf(email);
+		console.log(employee.name, employee.periods[currPeriodIdx]);
+		console.log(employee, currPeriodIdx);
+	};
+	
 
 
 
@@ -276,14 +346,40 @@
 	* handle simulation tic
 	* @returns {undefined}
 	*/
-	const tickHandler = function(nodes) {
-		nodes.style('left', function(d) {
+	const tickHandler = function(node) {
+		node.style('left', function(d) {
 				return d.x + 'px';
 			})
 			.style('top', function(d) {
 				return d.y + 'px';
 			})
 	};
+
+
+	/**
+	* show vector to previous value
+	* @returns {undefined}
+	*/
+	const showVectors = function() {
+		// employees.forEach((employee) => {
+		// 	if (employee.periods[currPeriodIdx].isFromThisWeek) {
+		// 		const previousMood = employee.periods[prevPeriodIdx];
+		// 	}
+		// });
+		// employeeNodes.forEach((node) => {
+		// 	console.log(node.node);
+		// });
+		// employeeNodes.attr('zip', (d) => {
+		// 	console.log(d)
+		// });
+		// console.log(employeeNodes._groups[0]);
+		// employeeNodes.nodes.forEach(node => {
+		// 	console.log(node);
+		// });
+		console.log(employeeNodes.nodes());
+		employeeNodes.on('mouseover', () => {console.log('over');});
+	};
+	
 
 
 
@@ -295,6 +391,7 @@
 		clearTimeout(simulationTimer);
 		simulationTimer = setTimeout(() => {
 			simulation.stop();
+			showVectors();
 		}, simulationDuration);
 	};
 	
@@ -321,9 +418,7 @@
 				return firstPeriod.business;
 			})
 			.attr('class', 'employee-node')
-			.on('mouseover', function(d) {
-				// console.log(d.name, d.happiness, d.business);
-			})
+			.on('click', showEmployeeDetails)
 
 		// now that we have nodes on screen, we can check their dimensions
 		let typicalNode = graph.select('.employee-node:first-child').node();
@@ -386,10 +481,11 @@
 	*/
 	var loadData = function() {
 		d3.queue()
-			.defer(d3.text, 'data/happiness-wk33.csv')
-			.defer(d3.text, 'data/happiness-wk34.csv')
-			.defer(d3.text, 'data/happiness-wk35.csv')
-			.defer(d3.text, 'data/happiness-wk36.csv')
+			.defer(d3.text, 'data/Weekly happiness form week 32 (Responses).csv')
+			.defer(d3.text, 'data/Weekly happiness form week 33 (Responses).csv')
+			.defer(d3.text, 'data/Weekly happiness form week 34 (Responses).csv')
+			.defer(d3.text, 'data/Weekly happiness form week 35 (Responses).csv')
+			.defer(d3.text, 'data/Weekly happiness form week 36 (Responses).csv')
 			.await(loadHandler);
 	};
 
