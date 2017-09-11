@@ -103,7 +103,6 @@ button {
 	border-radius: 50%;
 	background: #ccc;
 	background: #00bdfa;
-	color: white;
 	font-size: 1.4rem;
 	transform: translate(-50%, -50%);
 	transition: transform 0.3s;
@@ -119,6 +118,7 @@ button {
 	top: 50%;
 	left: 50%;
 	text-align: center;
+	color: white;
 	content: attr(data-initials);
 	transform: translate(-50%, -50%);
 }
@@ -142,19 +142,28 @@ button {
 	transform: translate(-50%, 0%);
 }*/
 
-.mood-trace.visible {
+.mood-trace {
 	position: absolute;
 	top: 50%;
 	left: 50%;
-	width: 4px;
+	width: 0;
+	/*border-top: 20px solid transparent;
+	border-bottom: 20px solid transparent;
+	border-left: 0px solid currentColor;*/
 	height: var(--node-size);
-	/*border-radius: 50%;*/
+	/*height: 0;*/
 	border-radius: 0 50% 50% 0;
 	opacity: 0.2;
-	background: black;
-	background: inherit;
+	background: transparent;
+	color: inherit;
 	transform-origin: center left;
 	transform: translate(0, -50%);
+	transition: background 0.3s;
+}
+
+.mood-trace--is-visible {
+	background: inherit;
+	/*border-top-color: inherit;*/
 }
 
 /*.prev-mood-node--is-hidden {

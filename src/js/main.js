@@ -116,6 +116,13 @@
 			// minHealthScore should have colorIdx 0
 			const colorIdx = periodHealthScore - minHealthScore;
 			return colors[colorIdx];
+		})
+		.style('color', function(d) {
+			const periodHealthScore = d.periods[currPeriodIdx].health;
+
+			// minHealthScore should have colorIdx 0
+			const colorIdx = periodHealthScore - minHealthScore;
+			return colors[colorIdx];
 		});
 	};
 
@@ -149,6 +156,8 @@
 				currPeriodIdx = 0;
 			}
 			prevPeriodIdx = Math.max(0, prevPeriodIdx);
+
+			graphElm.querySelectorAll('.mood-trace').forEach(traceElm => traceElm.classList.remove('mood-trace--is-visible'));
 
 			setHealthColors();
 			setRecentness();
@@ -362,53 +371,13 @@
 	};
 
 
-	/**
-	* show vector to previous value
-	* @returns {undefined}
-	*/
-	// const showMoodTrace = function() {
-	// 	const prevMoodElms = prevMoodsElm.querySelectorAll('.prev-mood-node'),
-	// 		hiddenClass = 'prev-mood-node--is-hidden';
-	// 	if (currPeriodIdx >= 0) {
-	// 		prevMoodElms.forEach((elm) => {
-	// 			const data = elm.__data__;
-	// 			if (data.periods[currPeriodIdx].isFromThisWeek) {
-	// 				elm.classList.remove(hiddenClass);
-	// 				const currMood = data.periods[currPeriodIdx],
-	// 					prevMood = data.periods[prevPeriodIdx];
-	// 				elm.style.left = happinessScale(prevMood.happiness)+'px';
-	// 				elm.style.top = businessScale(prevMood.business)+'px';
-
-	// 				const dx = happinessScale(Math.abs(currMood.happiness - prevMood.happiness)),
-	// 					dy = businessScale(Math.abs(currMood.business - prevMood.business)),
-	// 					length = Math.sqrt(Math.pow(dx,2) + Math.pow(dy,2));
-	// 					console.log('h:', currMood.happiness, prevMood.happiness, 'b:', currMood.business, prevMood.business, dx, dy, length);
-
-	// 				elm.style.width = length + 'px';
-	// 			} else {
-	// 				elm.classList.add(hiddenClass);
-	// 			}
-	// 			// console.log(elm, elm.__data__);
-	// 		});
-	// 	}
-		
-	// };
-
-	window.getDegrees = function(dy, dx) {
-		// const quot = (dx === 0) 1 : dy/dx
-
-		const alphaRadians = Math.atan(dy/dx),
-			alpha = alphaRadians * 180/Math.PI;
-		console.log(alpha);
-	}
-
 
 	/**
 	* 
 	* @returns {undefined}
 	*/
 	const showMoodTrace = function() {
-		if (currPeriodIdx >= 0) {
+		if (currPeriodIdx >= 0 && currPeriodIdx !== prevPeriodIdx) {
 			graphElm.querySelectorAll('.employee-node').forEach((elm, i) => {
 				const data = elm.__data__,
 					currMood = data.periods[currPeriodIdx];
@@ -416,7 +385,7 @@
 					const traceElm = elm.querySelector('.mood-trace'),
 						prevMood = data.periods[prevPeriodIdx];
 
-					traceElm.classList.add('visible');
+					traceElm.classList.add('mood-trace--is-visible');
 					const currLeft = parseInt(elm.style.left, 10),
 						currTop = parseInt(elm.style.top, 10),
 						prevLeft = happinessScale(prevMood.happiness),
@@ -424,52 +393,20 @@
 						dx = prevLeft - currLeft,// distance from curr to prev
 						dy = prevTop - currTop;
 
-					// traceElm.style.top = (dy + nodeRadius) + 'px';
-					// traceElm.style.left = (dx + nodeRadius) + 'px';
-
-					// traceElm.style.top = nodeRadius + 'px';
-					// traceElm.style.left = nodeRadius + 'px';
 					const length = Math.sqrt(dx*dx + dy*dy);
-					traceElm.style.width = length + 'px';
-
-
-					if (i === 0) {
-						elm.style.background = 'purple';
-						console.log('left:', currLeft, prevLeft, 'top:', currTop, prevTop);
-						console.log('dx:', dx, 'dy:', dy);
-					}
-
 					const alphaRadians = Math.atan(dy/dx);
 					let alpha = alphaRadians * 180/Math.PI;
 					if (dx < 0) {
 						alpha += 180;
 					}
+					traceElm.style.width = length + 'px';
+					// traceElm.style.borderLeftWidth = length + 'px';
 					traceElm.style.transform = 'translate(0, -50%) rotate('+alpha+'deg)';
-
-
-					// console.log(currLeft);
 				}
-				// console.log(elm, data);
 			});
 		}
 	};
 	
-
-
-	/**
-	* 
-	* @returns {undefined}
-	*/
-	// const addPrevMoods = function() {
-	// 	prevMoodNodes = prevMoodsArea.selectAll('.prev-mood-node')
-	// 		.data(employees)
-	// 		.enter()
-	// 		.append('div')
-	// 		.attr('class', 'prev-mood-node prev-mood-node--is-hidden')
-	// };
-	
-	
-
 
 
 	/**
