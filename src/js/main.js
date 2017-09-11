@@ -13,13 +13,6 @@
 
 	const firstWeekNumber = 33;// number of the first week in the data
 	
-	let timestampField,
-		emailField,
-		nameField,
-		happinessField,
-		businessField,
-		improvementsField;
-
 	let employeeEmails = [],
 		employees = [],
 		currPeriodIdx = -1,
@@ -152,52 +145,6 @@
 	
 
 
-
-	/**
-	* initialize interface
-	* @returns {undefined}
-	*/
-	const initInterface = function() {
-		// initButtons
-		d3.select('#show-mood').on('click', function() {
-			changePeriod();
-		});
-
-		d3.select('#show-next-period').on('click', function() {
-			changePeriod(+1);
-		});
-
-		d3.select('#show-prev-period').on('click', function() {
-			changePeriod(-1);
-		});
-
-		d3.select('#combined').on('click', function() {
-			simulation
-				.force('forceX', forceXCombined)
-				.force('forceY', forceYCombined)
-				.alphaTarget(0.5)
-				.restart();
-			scheduleSimulationStop();
-		});
-
-
-	};
-
-
-	/**
-	* create variables for the questions in the questionaire
-	* @returns {undefined}
-	*/
-	const setQuestionFields = function(questions) {
-		timestampField = questions[0];
-		emailField = questions[1];
-		nameField = questions[2];
-		happinessField = questions[3];
-		businessField = questions[4];
-		improvementsField = questions[5];
-	};
-
-
 	/**
 	* create get the exact wording of the questions in this period's questionaire
 	* wording may change; order of the topics should remain the same
@@ -215,6 +162,34 @@
 
 		return fields;
 	};
+
+
+
+	/**
+	* get the object for the team avarage; create it if it doesn't exist yet
+	* @returns {object} object like employee-object
+	*/
+	const getAvarageObject = function() {
+		const avgString = 'team-avarage';
+		let avgObj,
+			avgIndex = employeeEmails.indexOf(avgString);
+
+		if (avgIndex === -1) {
+			avgObj = {
+				email: '',
+				name: 'Team Avarage',
+				initials: 'AVG',
+				periods: []
+			};
+			employees.push(avgObj);
+			employeeEmails.push(avgString);
+			avgIndex = employees.length -1;
+		}
+		avgObj = employees[avgIndex];
+
+		return avgObj;
+	};
+	
 	
 
 
@@ -224,6 +199,9 @@
 	*/
 	const processPeriodData = function(dataset, weekNumber) {
 		const fields = getPeriodQuestionFields(dataset.columns);
+		let teamHappiness = 0,
+			teamBusiness = 0,
+			teamHealth = 0;
 
 		dataset.forEach((employeeRow) => {
 			const email = employeeRow[fields.email]
@@ -257,13 +235,22 @@
 				};
 			// I'm still assuming that every employee is present in every period.
 			employee.periods.push(mood);
-			// employees.push(employee);
 
+			teamHappiness += happiness;
+			teamBusiness += business;
+			teamHealth += health;
 		});
+
+		const avgObj = getAvarageObject(),
+			numEntries = dataset.length,
+			mood = {
+				happiness: (teamHappiness/numEntries).toFixed(1),
+				business: (teamBusiness/numEntries).toFixed(1),
+				health: (teamHealth/numEntries).toFixed(1),
+			};
+		avgObj.periods.push(mood);
 	};
 	
-	
-
 
 
 	/**
@@ -271,31 +258,18 @@
 	* @returns {undefined}
 	*/
 	const processData = function(rawDatasetStrings) {
-		// console.log(rawData);
 		totalPeriods = rawDatasetStrings.length;
-		// setQuestionFields(rawDatasetStrings[0].columns);
 		const ssv = d3.dsvFormat(';');// define semicolon separated value parser
 
 		let weekNumber = 35
 
 		// loop through all data
 		rawDatasetStrings.forEach((datasetString) => {
-
 			const dataset = ssv.parse(datasetString);
-			// .defer(d3.text, 'data/happiness-wk36.csv')
-			// .await((error, data) => {
-			// 	console.log(data);
-			// 	const ssv = d3.dsvFormat(';');
-			// 	console.log('----------------');
-			// 	// data.forEach((row) => {
-			// 		// console.log(row);
-			// 		console.log(ssv.parse(data));
-			// 	// });
-			// });
-
 			processPeriodData(dataset);
 		});
 	};
+
 
 
 	/**
@@ -333,7 +307,6 @@
 	const drawGraph = function() {
 		let data = employees;
 		// add shapes
-		console.log(employees);
 		employeeNodes = graph.selectAll('.employee-node')
 			.data(data)
 			.enter()
@@ -347,7 +320,6 @@
 				const firstPeriod = d.periods[0];
 				return firstPeriod.business;
 			})
-			.attr('data-health-score', calculateHealthScore)
 			.attr('class', 'employee-node')
 			.on('mouseover', function(d) {
 				// console.log(d.name, d.happiness, d.business);
@@ -363,7 +335,38 @@
 		scheduleSimulationStop();
 	};
 	
+
+
+	/**
+	* initialize interface
+	* @returns {undefined}
+	*/
+	const initInterface = function() {
+		// initButtons
+		d3.select('#show-mood').on('click', function() {
+			changePeriod();
+		});
+
+		d3.select('#show-next-period').on('click', function() {
+			changePeriod(+1);
+		});
+
+		d3.select('#show-prev-period').on('click', function() {
+			changePeriod(-1);
+		});
+
+		d3.select('#combined').on('click', function() {
+			simulation
+				.force('forceX', forceXCombined)
+				.force('forceY', forceYCombined)
+				.alphaTarget(0.5)
+				.restart();
+			scheduleSimulationStop();
+		});
+
+	};
 	
+
 
 	/**
 	* handle data being loaded
@@ -383,18 +386,9 @@
 	*/
 	var loadData = function() {
 		d3.queue()
-			//https://stackoverflow.com/questions/36090611/how-to-parse-a-csv-file-with-d3-when-parser-is-not-the-comma
-			// var ssv = d3.dsv(";", "text/plain");
-
-			// // Load and (later, asynchronously) parse the data
-			// ssv(url, function(data) {
-			//   console.log(data); // should log an array of parsed values
-			// });
-
-			// .defer(d3.csv, 'data/happiness.csv')
-			// .defer(d3.csv, 'data/happiness-wk33.csv')
-			// .defer(d3.csv, 'data/happiness-wk34.csv')
-			// .defer(d3.csv, 'data/happiness-wk35.csv')
+			.defer(d3.text, 'data/happiness-wk33.csv')
+			.defer(d3.text, 'data/happiness-wk34.csv')
+			.defer(d3.text, 'data/happiness-wk35.csv')
 			.defer(d3.text, 'data/happiness-wk36.csv')
 			.await(loadHandler);
 	};

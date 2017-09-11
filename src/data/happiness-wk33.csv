@@ -1,20 +1,20 @@
-Timestamp,Email Address,What is your name?,How happy are you with the work you're doing ,How busy are you at the moment ,What would improve your happiness?
-08/11/2017 9:21,milanjoosting.bunk@valtech.nl,Milan,4,4,Finishing more stuff & a bit of labs : )
-08/11/2017 9:22,guido.van.tricht@valtech.nl,Guido,4,4,Taart
-08/11/2017 9:34,trivian.panday@valtech.nl,Trivian,4,3,
-08/11/2017 10:32,stefan.kuiper@valtech.nl,Stefan,4,4,Een leuk en uitdagend project in het vooruitzicht.
-08/11/2017 12:25,karin.horenberg@valtech.nl,Karin,3,4,-
-08/11/2017 13:57,frank.nijmeijer@valtech.nl,Frank Nijmeijer,2,2,
-08/11/2017 22:59,gertjan.froberg@valtech.nl,Gert-Jan Fröberg,2,3,
-8/14/2017 8:25:42,reinazwarts@gmail.com,Reina,2,3,Get direction from vision of Valtech_
-8/14/2017 8:46:43,jeroen.van.rijn@valtech.nl,Jeroen,4,3,Time for prototyping
-8/14/2017 10:46:06,sunniva.de.haan@valtech.nl,Sunniva,4,4,
-08/11/2017 9:21,chris.van.de.steeg@valtech.nl,Chris,4,4,
-08/11/2017 9:22,jaron.barends@valtech.nl,Jarón,3,3,
-08/11/2017 9:34,arjan.den.os@valtech.nl,Arjan,3,3,
-08/11/2017 10:32,manon.bruinekreeft@valtech.nl,Manon,4,3,
-08/11/2017 12:25,nicole.stroosnijder@valtech.nl,Nicole,3,2,
-08/11/2017 13:57,ermo.leenders@valtech.nl,Ermo,1,2,
-08/11/2017 22:59,wieteke.ozturk@valtech.nl,Wieteke,4,2,
-8/14/2017 8:25:42,milou.van.kooij@valtech.nl,Milou,4,1,
-8/14/2017 8:25:42,ralf.van.den.burg@valtech.nl,Ralf,3,4,
+Timestamp;Email Address;What is your name?;How happy are you with the work you're doing ;How busy are you at the moment ;What would improve your happiness?
+08/11/2017 9:21;milanjoosting.bunk@valtech.nl;Milan;4;4;Finishing more stuff & a bit of labs : )
+08/11/2017 9:22;guido.van.tricht@valtech.nl;Guido;4;4;Taart
+08/11/2017 9:34;trivian.panday@valtech.nl;Trivian;4;3;
+08/11/2017 10:32;stefan.kuiper@valtech.nl;Stefan;4;4;Een leuk en uitdagend project in het vooruitzicht.
+08/11/2017 12:25;karin.horenberg@valtech.nl;Karin;3;4;-
+08/11/2017 13:57;frank.nijmeijer@valtech.nl;Frank Nijmeijer;2;2;
+08/11/2017 22:59;gertjan.froberg@valtech.nl;Gert-Jan Fröberg;2;3;
+8/14/2017 8:25:42;reinazwarts@gmail.com;Reina;2;3;Get direction from vision of Valtech_
+8/14/2017 8:46:43;jeroen.van.rijn@valtech.nl;Jeroen;4;3;Time for prototyping
+8/14/2017 10:46:06;sunniva.de.haan@valtech.nl;Sunniva;4;4;
+08/11/2017 9:21;chris.van.de.steeg@valtech.nl;Chris;4;4;
+08/11/2017 9:22;jaron.barends@valtech.nl;Jarón;3;3;
+08/11/2017 9:34;arjan.den.os@valtech.nl;Arjan;3;3;
+08/11/2017 10:32;manon.bruinekreeft@valtech.nl;Manon;4;3;
+08/11/2017 12:25;nicole.stroosnijder@valtech.nl;Nicole;3;2;
+08/11/2017 13:57;ermo.leenders@valtech.nl;Ermo;1;2;
+08/11/2017 22:59;wieteke.ozturk@valtech.nl;Wieteke;4;2;
+8/14/2017 8:25:42;milou.van.kooij@valtech.nl;Milou;4;1;
+8/14/2017 8:25:42;ralf.van.den.burg@valtech.nl;Ralf;3;4;
