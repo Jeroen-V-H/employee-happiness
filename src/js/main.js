@@ -6,6 +6,7 @@
 
 
 	const graphElm = document.getElementById('graph'),
+		prevMoodsElm = document.getElementById('prev-moods'),
 		width = graphElm.clientWidth,
 		height = graphElm.clientHeight,
 		forceStrength = 0.1,
@@ -35,12 +36,14 @@
 
 	let simulationTimer,
 		employeeNodes,
+		prevMoodNodes,
 		nodeRadius = 25,// will be calculated by js
 		nodeDistance = 3;
 
 	let graph = d3.select('#graph')
 			.attr('width', width)
-			.attr('height', height);
+			.attr('height', height),
+		prevMoodsArea = d3.select('#prev-moods');
 
 	// define force functions
 	const forceXHappiness = d3.forceX(function(d) {
@@ -138,12 +141,15 @@
 	const changePeriod = function(increment = 0) {
 			const newPeriodIdx = currPeriodIdx + increment;
 			if (newPeriodIdx >= 0 && newPeriodIdx < totalPeriods) {
+				prevPeriodIdx = currPeriodIdx;
 				currPeriodIdx = newPeriodIdx;
 			}
 			if (newPeriodIdx < 0) {
 				// we start at -1 to make first call to show next show the first period
 				currPeriodIdx = 0;
 			}
+			prevPeriodIdx = Math.max(0, prevPeriodIdx);
+
 			setHealthColors();
 			setRecentness();
 
@@ -360,25 +366,68 @@
 	* show vector to previous value
 	* @returns {undefined}
 	*/
-	const showVectors = function() {
-		// employees.forEach((employee) => {
-		// 	if (employee.periods[currPeriodIdx].isFromThisWeek) {
-		// 		const previousMood = employee.periods[prevPeriodIdx];
-		// 	}
-		// });
-		// employeeNodes.forEach((node) => {
-		// 	console.log(node.node);
-		// });
-		// employeeNodes.attr('zip', (d) => {
-		// 	console.log(d)
-		// });
-		// console.log(employeeNodes._groups[0]);
-		// employeeNodes.nodes.forEach(node => {
-		// 	console.log(node);
-		// });
-		console.log(employeeNodes.nodes());
-		employeeNodes.on('mouseover', () => {console.log('over');});
+	// const showMoodTrace = function() {
+	// 	const prevMoodElms = prevMoodsElm.querySelectorAll('.prev-mood-node'),
+	// 		hiddenClass = 'prev-mood-node--is-hidden';
+	// 	if (currPeriodIdx >= 0) {
+	// 		prevMoodElms.forEach((elm) => {
+	// 			const data = elm.__data__;
+	// 			if (data.periods[currPeriodIdx].isFromThisWeek) {
+	// 				elm.classList.remove(hiddenClass);
+	// 				const currMood = data.periods[currPeriodIdx],
+	// 					prevMood = data.periods[prevPeriodIdx];
+	// 				elm.style.left = happinessScale(prevMood.happiness)+'px';
+	// 				elm.style.top = businessScale(prevMood.business)+'px';
+
+	// 				const dx = happinessScale(Math.abs(currMood.happiness - prevMood.happiness)),
+	// 					dy = businessScale(Math.abs(currMood.business - prevMood.business)),
+	// 					length = Math.sqrt(Math.pow(dx,2) + Math.pow(dy,2));
+	// 					console.log('h:', currMood.happiness, prevMood.happiness, 'b:', currMood.business, prevMood.business, dx, dy, length);
+
+	// 				elm.style.width = length + 'px';
+	// 			} else {
+	// 				elm.classList.add(hiddenClass);
+	// 			}
+	// 			// console.log(elm, elm.__data__);
+	// 		});
+	// 	}
+		
+	// };
+
+
+	/**
+	* 
+	* @returns {undefined}
+	*/
+	const showMoodTrace = function() {
+		if (currPeriodIdx >= 0) {
+			graphElm.querySelectorAll('.employee-node').forEach((elm) => {
+				const data = elm.__data__;
+				if (data.periods[currPeriodIdx].isFromThisWeek) {
+					elm.querySelectorAll('.mood-trace').forEach((trace) => {
+						console.log(trace);
+						trace.classList.add('visible');
+					});
+				}
+				// console.log(elm, data);
+			});
+		}
 	};
+	
+
+
+	/**
+	* 
+	* @returns {undefined}
+	*/
+	// const addPrevMoods = function() {
+	// 	prevMoodNodes = prevMoodsArea.selectAll('.prev-mood-node')
+	// 		.data(employees)
+	// 		.enter()
+	// 		.append('div')
+	// 		.attr('class', 'prev-mood-node prev-mood-node--is-hidden')
+	// };
+	
 	
 
 
@@ -391,7 +440,7 @@
 		clearTimeout(simulationTimer);
 		simulationTimer = setTimeout(() => {
 			simulation.stop();
-			showVectors();
+			showMoodTrace();
 		}, simulationDuration);
 	};
 	
@@ -402,10 +451,9 @@
 	* @returns {undefined}
 	*/
 	const drawGraph = function() {
-		let data = employees;
 		// add shapes
 		employeeNodes = graph.selectAll('.employee-node')
-			.data(data)
+			.data(employees)
 			.enter()
 			.append('div')
 			.attr('data-initials', d => d.initials)
@@ -425,9 +473,17 @@
 		nodeRadius = typicalNode.getBoundingClientRect().width/2,
 		nodeDistance = nodeRadius * 0.05;
 
-		simulation.nodes(data)
+		simulation.nodes(employees)
 			.on('tick', () => { tickHandler(employeeNodes) });
 		scheduleSimulationStop();
+
+		graphElm.querySelectorAll('.employee-node').forEach((elm) => {
+			let div = document.createElement('div');
+			div.classList.add('mood-trace');
+			elm.append(div);
+		});
+
+		// addPrevMoods();
 	};
 	
 
