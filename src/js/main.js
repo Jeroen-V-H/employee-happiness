@@ -270,20 +270,31 @@
 	* process the data so we can use it
 	* @returns {undefined}
 	*/
-	const processData = function(rawDatasets) {
+	const processData = function(rawDatasetStrings) {
 		// console.log(rawData);
-		totalPeriods = rawDatasets.length;
-		setQuestionFields(rawDatasets[0].columns);
+		totalPeriods = rawDatasetStrings.length;
+		// setQuestionFields(rawDatasetStrings[0].columns);
+		const ssv = d3.dsvFormat(';');// define semicolon separated value parser
 
 		let weekNumber = 35
 
 		// loop through all data
-		rawDatasets.forEach((dataset) => {
+		rawDatasetStrings.forEach((datasetString) => {
+
+			const dataset = ssv.parse(datasetString);
+			// .defer(d3.text, 'data/happiness-wk36.csv')
+			// .await((error, data) => {
+			// 	console.log(data);
+			// 	const ssv = d3.dsvFormat(';');
+			// 	console.log('----------------');
+			// 	// data.forEach((row) => {
+			// 		// console.log(row);
+			// 		console.log(ssv.parse(data));
+			// 	// });
+			// });
+
 			processPeriodData(dataset);
 		});
-
-		let data = rawDatasets[0];
-		return data;
 	};
 
 
@@ -358,10 +369,10 @@
 	* handle data being loaded
 	* @returns {undefined}
 	*/
-	const loadHandler = function(error, ...rawDatasets) {
+	const loadHandler = function(error, ...rawDatasetStrings) {
 		initInterface();
-		let data = processData(rawDatasets);
-		drawGraph(data);
+		processData(rawDatasetStrings);
+		drawGraph();
 	}// loadHandler
 
 
@@ -381,10 +392,10 @@
 			// });
 
 			// .defer(d3.csv, 'data/happiness.csv')
-			.defer(d3.csv, 'data/happiness-wk33.csv')
-			.defer(d3.csv, 'data/happiness-wk34.csv')
-			.defer(d3.csv, 'data/happiness-wk35.csv')
-			.defer(d3.csv, 'data/happiness-wk36.csv')
+			// .defer(d3.csv, 'data/happiness-wk33.csv')
+			// .defer(d3.csv, 'data/happiness-wk34.csv')
+			// .defer(d3.csv, 'data/happiness-wk35.csv')
+			.defer(d3.text, 'data/happiness-wk36.csv')
 			.await(loadHandler);
 	};
 
