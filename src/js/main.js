@@ -394,6 +394,14 @@
 		
 	// };
 
+	window.getDegrees = function(dy, dx) {
+		// const quot = (dx === 0) 1 : dy/dx
+
+		const alphaRadians = Math.atan(dy/dx),
+			alpha = alphaRadians * 180/Math.PI;
+		console.log(alpha);
+	}
+
 
 	/**
 	* 
@@ -401,13 +409,45 @@
 	*/
 	const showMoodTrace = function() {
 		if (currPeriodIdx >= 0) {
-			graphElm.querySelectorAll('.employee-node').forEach((elm) => {
-				const data = elm.__data__;
-				if (data.periods[currPeriodIdx].isFromThisWeek) {
-					elm.querySelectorAll('.mood-trace').forEach((trace) => {
-						console.log(trace);
-						trace.classList.add('visible');
-					});
+			graphElm.querySelectorAll('.employee-node').forEach((elm, i) => {
+				const data = elm.__data__,
+					currMood = data.periods[currPeriodIdx];
+				if (currMood.isFromThisWeek) {
+					const traceElm = elm.querySelector('.mood-trace'),
+						prevMood = data.periods[prevPeriodIdx];
+
+					traceElm.classList.add('visible');
+					const currLeft = parseInt(elm.style.left, 10),
+						currTop = parseInt(elm.style.top, 10),
+						prevLeft = happinessScale(prevMood.happiness),
+						prevTop = businessScale(prevMood.business),
+						dx = prevLeft - currLeft,// distance from curr to prev
+						dy = prevTop - currTop;
+
+					// traceElm.style.top = (dy + nodeRadius) + 'px';
+					// traceElm.style.left = (dx + nodeRadius) + 'px';
+
+					// traceElm.style.top = nodeRadius + 'px';
+					// traceElm.style.left = nodeRadius + 'px';
+					const length = Math.sqrt(dx*dx + dy*dy);
+					traceElm.style.width = length + 'px';
+
+
+					if (i === 0) {
+						elm.style.background = 'purple';
+						console.log('left:', currLeft, prevLeft, 'top:', currTop, prevTop);
+						console.log('dx:', dx, 'dy:', dy);
+					}
+
+					const alphaRadians = Math.atan(dy/dx);
+					let alpha = alphaRadians * 180/Math.PI;
+					if (dx < 0) {
+						alpha += 180;
+					}
+					traceElm.style.transform = 'translate(0, -50%) rotate('+alpha+'deg)';
+
+
+					// console.log(currLeft);
 				}
 				// console.log(elm, data);
 			});

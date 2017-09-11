@@ -144,10 +144,16 @@ button {
 
 .mood-trace.visible {
 	position: absolute;
+	top: 50%;
+	left: 50%;
 	width: 4px;
-	height: 4px;
+	height: var(--node-size);
 	/*border-radius: 50%;*/
+	border-radius: 0 50% 50% 0;
+	opacity: 0.2;
 	background: black;
+	background: inherit;
+	transform-origin: center left;
 	transform: translate(0, -50%);
 }
 
