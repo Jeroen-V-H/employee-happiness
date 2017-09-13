@@ -23,6 +23,7 @@ body {
 	font-family: Arial, Helvetica, sans-serif;
 	font-size: 1.6rem;
 	line-height: 1.5;
+	color: #666;
 }
 
 h1 {
@@ -77,6 +78,12 @@ button[disabled] {
 	font-size: 3.2rem;
 	vertical-align: middle;
 }
+
+
+.period-question-box {
+	width: 20em;
+}
+
 
 .canvas {
 	position: relative;

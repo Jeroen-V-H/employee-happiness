@@ -19,6 +19,8 @@
 	
 	let employeeEmails = [],
 		employees = [],
+		periodQuestions = [],
+		periodAnswerTimer,
 		currPeriodIdx = -1,
 		prevPeriodIdx = 0,
 		totalPeriods = 0;
@@ -178,6 +180,7 @@
 
 			setHealthColors();
 			setRecentness();
+			showPeriodAnswers();
 
 			simulation
 				.force('forceX', forceXHappiness)
@@ -203,7 +206,7 @@
 			name: questions[2],
 			happiness: questions[3],
 			business: questions[4],
-			improvements: questions[5]
+			otherQuestion: questions[5]
 		};
 
 		return fields;
@@ -277,9 +280,15 @@
 	*/
 	const processPeriodData = function(dataset, periodIdx) {
 		const fields = getPeriodQuestionFields(dataset.columns);
+
 		let teamHappiness = 0,
 			teamBusiness = 0,
-			teamHealth = 0;
+			teamHealth = 0,
+
+		periodQuestion = {
+			question: fields.otherQuestion,
+			answers: []
+		};
 
 		dataset.forEach((employeeRow) => {
 			const email = employeeRow[fields.email]
@@ -308,10 +317,15 @@
 			const happiness = +employeeRow[fields.happiness],
 				business = +employeeRow[fields.business],
 				health = calculateHealthScore(happiness, business),
+				answer = employeeRow[fields.otherQuestion],
 				mood = {
 					happiness,
 					business,
 					health,
+					otherQuestion: {
+						question: fields.otherQuestion,
+						answer
+					},
 					isFromThisWeek: true
 				};
 			// I'm still assuming that every employee is present in every period.
@@ -320,6 +334,11 @@
 				addNewEmployeeDummyMoods(employee, mood, periodIdx);
 			}
 			employee.periods.push(mood);
+
+			if (answer) {
+				periodQuestion.answers.push(answer);
+			}
+			periodQuestions.push(periodQuestion);
 
 			teamHappiness += happiness;
 			teamBusiness += business;
@@ -429,6 +448,36 @@
 			});
 		}
 	};
+
+
+	/**
+	* show a new answer to this period's question
+	* @returns {undefined}
+	*/
+	const showNewPeriodAnswer = function() {
+		clearTimeout(periodAnswerTimer);
+		const answers = periodQuestions[currPeriodIdx].answers,
+			answer = answers[Math.floor(answers.length*Math.random())];
+
+		document.getElementById('period-answer').textContent = answer;
+		setTimeout(showNewPeriodAnswer, 5000);
+	};
+	
+
+	
+	/**
+	* show answers for current period
+	* @returns {undefined}
+	*/
+	const showPeriodAnswers = function() {
+		const answerBox = document.getElementById('period-answer'),
+			questions = periodQuestions[currPeriodIdx];
+			
+		document.getElementById('period-question').textContent = questions.question;
+		showNewPeriodAnswer();
+	};
+	
+
 	
 
 
