@@ -6,13 +6,16 @@
 
 
 	const graphElm = document.getElementById('graph'),
-		prevMoodsElm = document.getElementById('prev-moods'),
 		width = graphElm.clientWidth,
 		height = graphElm.clientHeight,
 		forceStrength = 0.1,
 		simulationDuration = 2000;
 
 	const firstWeekNumber = 32;// number of the first week in the data
+
+	const dataFolder = 'data/',
+		dataFileUrlStart = dataFolder + 'Weekly happiness form week ',
+		dataFileUrlEnd = ' (Responses).csv';
 	
 	let employeeEmails = [],
 		employees = [],
@@ -42,8 +45,7 @@
 
 	let graph = d3.select('#graph')
 			.attr('width', width)
-			.attr('height', height),
-		prevMoodsArea = d3.select('#prev-moods');
+			.attr('height', height);
 
 	// define force functions
 	const forceXHappiness = d3.forceX(function(d) {
@@ -75,7 +77,7 @@
 	const getInitials = function(email) {
 		const parts = email.split('@')[0].split('.'),
 			nonCaps = [
-				'de', 'den', 'der', 'van', 'op', 't'
+				'de', 'den', 'der', 'van', 'op', 't', 'vande', 'vanden', 'vander', 'opt'
 			];
 		let initials = '';
 
@@ -104,6 +106,7 @@
 		return healthScore;
 	};
 	
+
 
 	/**
 	* 
@@ -137,7 +140,6 @@
 			return (!d.periods[currPeriodIdx].isFromThisWeek);
 		});
 	};
-	
 
 
 
@@ -157,7 +159,22 @@
 			}
 			prevPeriodIdx = Math.max(0, prevPeriodIdx);
 
-			graphElm.querySelectorAll('.mood-trace').forEach(traceElm => traceElm.classList.remove('mood-trace--is-visible'));
+			graphElm.querySelectorAll('.mood-trace').forEach((traceElm) => {
+				traceElm.classList.remove('mood-trace--is-visible');
+				traceElm.style.borderLeftWidth = 0;
+			});
+
+			if (currPeriodIdx === 0) {
+				document.getElementById('show-prev-period').setAttribute('disabled', 'disabled');
+			} else {
+				document.getElementById('show-prev-period').removeAttribute('disabled');
+			}
+
+			if (currPeriodIdx === totalPeriods-1) {
+				document.getElementById('show-next-period').setAttribute('disabled', 'disabled');
+			} else {
+				document.getElementById('show-next-period').removeAttribute('disabled');
+			}
 
 			setHealthColors();
 			setRecentness();
@@ -220,6 +237,7 @@
 	};
 
 
+
 	/**
 	* for new employees, add dummy moods for the periods where they weren't present yet
 	* @returns {undefined}
@@ -230,6 +248,7 @@
 			employee.periods.push(dummyMood);
 		}
 	};
+
 
 
 	/**
@@ -251,10 +270,6 @@
 		});
 	};
 	
-	
-	
-	
-
 
 	/**
 	* process dataset of 1 period
@@ -333,6 +348,8 @@
 	*/
 	const processData = function(rawDatasetStrings) {
 		totalPeriods = rawDatasetStrings.length;
+		setWeek();
+
 		const ssv = d3.dsvFormat(';');// define semicolon separated value parser
 
 		// loop through all data
@@ -341,6 +358,7 @@
 			processPeriodData(dataset, periodIdx);
 		});
 	};
+
 
 
 	/**
@@ -354,7 +372,6 @@
 		console.log(employee, currPeriodIdx);
 	};
 	
-
 
 
 	/**
@@ -373,7 +390,7 @@
 
 
 	/**
-	* 
+	* show trace indicating previous period's mood
 	* @returns {undefined}
 	*/
 	const showMoodTrace = function() {
@@ -381,27 +398,33 @@
 			graphElm.querySelectorAll('.employee-node').forEach((elm, i) => {
 				const data = elm.__data__,
 					currMood = data.periods[currPeriodIdx];
+
 				if (currMood.isFromThisWeek) {
 					const traceElm = elm.querySelector('.mood-trace'),
 						prevMood = data.periods[prevPeriodIdx];
 
-					traceElm.classList.add('mood-trace--is-visible');
-					const currLeft = parseInt(elm.style.left, 10),
-						currTop = parseInt(elm.style.top, 10),
-						prevLeft = happinessScale(prevMood.happiness),
-						prevTop = businessScale(prevMood.business),
-						dx = prevLeft - currLeft,// distance from curr to prev
-						dy = prevTop - currTop;
+					// if happiness or business has changed, show trace
+					if (prevMood.happiness !== currMood.happiness || prevMood.business !== currMood.business) {
 
-					const length = Math.sqrt(dx*dx + dy*dy);
-					const alphaRadians = Math.atan(dy/dx);
-					let alpha = alphaRadians * 180/Math.PI;
-					if (dx < 0) {
-						alpha += 180;
+						traceElm.classList.add('mood-trace--is-visible');
+						const currLeft = parseInt(elm.style.left, 10),
+							currTop = parseInt(elm.style.top, 10),
+							prevLeft = happinessScale(prevMood.happiness),
+							prevTop = businessScale(prevMood.business),
+							dx = prevLeft - currLeft,// distance from curr to prev
+							dy = prevTop - currTop,
+							length = Math.sqrt(dx*dx + dy*dy),
+							alphaRadians = Math.atan(dy/dx);
+
+						let alpha = alphaRadians * 180/Math.PI;
+						if (dx < 0) {
+							alpha += 180;
+						}
+
+						// traceElm.style.width = length + 'px';
+						traceElm.style.borderLeftWidth = length + 'px';
+						traceElm.style.transform = 'translate(0, -50%) rotate('+alpha+'deg)';
 					}
-					traceElm.style.width = length + 'px';
-					// traceElm.style.borderLeftWidth = length + 'px';
-					traceElm.style.transform = 'translate(0, -50%) rotate('+alpha+'deg)';
 				}
 			});
 		}
@@ -442,6 +465,7 @@
 				const firstPeriod = d.periods[0];
 				return firstPeriod.business;
 			})
+			.attr('title', d => d.name)
 			.attr('class', 'employee-node')
 			.on('click', showEmployeeDetails)
 
@@ -453,14 +477,13 @@
 		simulation.nodes(employees)
 			.on('tick', () => { tickHandler(employeeNodes) });
 		scheduleSimulationStop();
+		setTimeout(() => {changePeriod(+1);}, 1000);
 
 		graphElm.querySelectorAll('.employee-node').forEach((elm) => {
 			let div = document.createElement('div');
 			div.classList.add('mood-trace');
 			elm.append(div);
 		});
-
-		// addPrevMoods();
 	};
 	
 
@@ -483,18 +506,70 @@
 			changePeriod(-1);
 		});
 
-		d3.select('#combined').on('click', function() {
-			simulation
-				.force('forceX', forceXCombined)
-				.force('forceY', forceYCombined)
-				.alphaTarget(0.5)
-				.restart();
-			scheduleSimulationStop();
-		});
+		// d3.select('#combined').on('click', function() {
+		// 	simulation
+		// 		.force('forceX', forceXCombined)
+		// 		.force('forceY', forceYCombined)
+		// 		.alphaTarget(0.5)
+		// 		.restart();
+		// 	scheduleSimulationStop();
+		// });
 
 	};
-	
 
+
+
+	/**
+	* 
+	* @returns {undefined}
+	*/
+	const fileExists = function(url) {
+	    var http = new XMLHttpRequest();
+	    http.open('HEAD', url, false);
+	    // this line will show an error in the console
+	    // this is not a js-error, so we can't use try catch
+	    http.send();
+	    return http.status !== 404;
+	};
+
+
+
+	/**
+	* create a list of files to load
+	* @returns {undefined}
+	*/
+	const createFileList = function() {
+
+		let weekNumber = firstWeekNumber,
+			urlToCheck,
+			urls = [];
+
+		const createUrl = function(weekNumber) {
+			return dataFileUrlStart + weekNumber + dataFileUrlEnd;
+		}
+
+		urlToCheck = createUrl(weekNumber);
+
+		while (fileExists(urlToCheck)) {
+			urls.push(urlToCheck);
+			weekNumber ++;
+			urlToCheck = createUrl(weekNumber);
+		}
+		return urls;
+	};
+
+
+
+	/**
+	* set the current week
+	* @returns {undefined}
+	*/
+	const setWeek = function() {
+		currPeriodIdx = totalPeriods - 2;// we'll call changePeriod(+1) 1sec in the script
+		prevPeriodIdx = Math.max(currPeriodIdx -1, 0);
+	};
+	
+	
 
 	/**
 	* handle data being loaded
@@ -505,21 +580,21 @@
 		processData(rawDatasetStrings);
 		drawGraph();
 	}// loadHandler
-
+	
 
 
 	/**
 	* load data and kick off rendering
 	* @returns {undefined}
 	*/
-	var loadData = function() {
-		d3.queue()
-			.defer(d3.text, 'data/Weekly happiness form week 32 (Responses).csv')
-			.defer(d3.text, 'data/Weekly happiness form week 33 (Responses).csv')
-			.defer(d3.text, 'data/Weekly happiness form week 34 (Responses).csv')
-			.defer(d3.text, 'data/Weekly happiness form week 35 (Responses).csv')
-			.defer(d3.text, 'data/Weekly happiness form week 36 (Responses).csv')
-			.await(loadHandler);
+	const loadData = function() {
+		const urlsToLoad = createFileList();
+
+		let queue = d3.queue();
+		urlsToLoad.forEach((url) => {
+			queue = queue.defer(d3.text, url);
+		});
+		queue.await(loadHandler);
 	};
 
 
@@ -532,6 +607,7 @@
 	const init = function() {
 		loadData();// load data and kick things off
 	};
+
 
 
 	// kick of the script when all dom content has loaded

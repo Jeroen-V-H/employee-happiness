@@ -10,7 +10,8 @@
 /*-- End reset --*/
 
 :root {
-	--node-size: 40px;
+	--node-size: 36px;
+	--node-radius: calc(var(--node-size)/2);
 	--indicator-translation: -80px;
 }
 
@@ -36,12 +37,31 @@ h2 {
 
 button {
 	display: inline-block;
-	margin: 0.5em;
-	padding: 0.5em;
+	border: 0.5em solid transparent;
+	vertical-align: middle;
+	background: transparent;
+	color: #00bdfa;
+	/*opacity: 0.5;*/
+}
+
+.prev-period {
+	border-left: 0;
+	border-right: 1em solid currentColor;
+}
+
+.next-period {
+	border-right: 0;
+	border-left: 1em solid currentColor;
+}
+
+button[disabled] {
+	color: #ccc;
+	cursor: default;
 }
 
 .options {
 	float: right;
+	margin-right: 1em;
 }
 
 .week-number {
@@ -51,33 +71,27 @@ button {
 }
 
 .week-number__value {
+	display: inline-block;
+	margin: 0 0.5em;
+	color: #00bdfa;
 	font-size: 3.2rem;
+	vertical-align: middle;
 }
 
 .canvas {
 	position: relative;
 	margin: 100px;
-	width: 720px;
-	height: 720px;
+	width: 640px;
+	height: 640px;
 }
 
-
-.graph,
-.prev-moods {
+.graph {
 	position: relative;
 	width: 100%;
 	height: 100%;
 }
 
-.graph {
-	z-index: 1;
-}
-.prev-moods {
-	position: absolute;
-	top: 0;
-	left: 0;
-}
-
+/* axes */
 .graph::before,
 .graph::after {
 	display: block;
@@ -93,6 +107,7 @@ button {
 	transform: rotate(90deg);
 }
 
+
 .employee-node {
 	position: absolute;
 	top: 0;
@@ -101,8 +116,8 @@ button {
 	width: var(--node-size);
 	height: var(--node-size);
 	border-radius: 50%;
-	background: #ccc;
-	background: #00bdfa;
+	color: #00bdfa;
+	background: currentColor;
 	font-size: 1.4rem;
 	transform: translate(-50%, -50%);
 	transition: transform 0.3s;
@@ -117,6 +132,7 @@ button {
 	position: absolute;
 	top: 50%;
 	left: 50%;
+	font-family: 'arial narrow';
 	text-align: center;
 	color: white;
 	content: attr(data-initials);
@@ -147,29 +163,26 @@ button {
 	top: 50%;
 	left: 50%;
 	width: 0;
-	/*border-top: 20px solid transparent;
-	border-bottom: 20px solid transparent;
-	border-left: 0px solid currentColor;*/
-	height: var(--node-size);
-	/*height: 0;*/
+	border: calc(var(--node-radius) - 4px) solid transparent;
+	border-left: 0px solid transparent;
+	border-right: none;
+	height: 8px;/* 2× the 4px in border calc */
 	border-radius: 0 50% 50% 0;
 	opacity: 0.2;
 	background: transparent;
 	color: inherit;
 	transform-origin: center left;
 	transform: translate(0, -50%);
-	transition: background 0.3s;
+	transition: border 0.3s;
 }
 
 .mood-trace--is-visible {
-	background: inherit;
-	/*border-top-color: inherit;*/
+	/*background: inherit;*/
+	border-left-color: currentColor;
+	transition-duration: 0.3s;
 }
 
-/*.prev-mood-node--is-hidden {
-	opacity: 0.2;
-}*/
-
+/* indicators on axes */
 .indicator {
 	position: absolute;
 	font-size: 3rem;
