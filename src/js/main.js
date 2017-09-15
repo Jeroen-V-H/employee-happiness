@@ -338,12 +338,13 @@
 			if (answer) {
 				periodQuestion.answers.push(answer);
 			}
-			periodQuestions.push(periodQuestion);
 
 			teamHappiness += happiness;
 			teamBusiness += business;
 			teamHealth += health;
 		});
+
+		periodQuestions.push(periodQuestion);
 
 		const avgObj = getAvarageObject(),
 			numEntries = dataset.length,
@@ -387,8 +388,7 @@
 	*/
 	const showEmployeeDetails = function(employee) {
 		// const email = d[d.column] employeeIndex = employeeEmails.indexOf(email);
-		console.log(employee.name, employee.periods[currPeriodIdx]);
-		console.log(employee, currPeriodIdx);
+		console.log(employee);
 	};
 	
 
