@@ -290,7 +290,9 @@
 			answers: []
 		};
 
+		let rowCounter = 0;
 		dataset.forEach((employeeRow) => {
+			rowCounter++;
 			const email = employeeRow[fields.email]
 			let employee,
 				isNewlyAdded = false;
@@ -347,13 +349,25 @@
 		periodQuestions.push(periodQuestion);
 
 		const avgObj = getAvarageObject(),
-			numEntries = dataset.length,
+			numEntries = dataset.length;
+		let mood;
+
+		if (numEntries > 0) {
 			mood = {
 				happiness: (teamHappiness/numEntries).toFixed(1),
 				business: (teamBusiness/numEntries).toFixed(1),
 				health: (teamHealth/numEntries).toFixed(1),
 				isFromThisWeek: true
 			};
+		} else {
+			console.log('empty');
+			mood = {
+				happiness: 3,
+				business: 3,
+				health: 0.1,// fraction makes it fail at detecting color - what we want :)
+				isFromThisWeek: true
+			};
+		}
 		avgObj.periods.push(mood);
 
 		// add moods for employees that were in previous periods, but not in this one
