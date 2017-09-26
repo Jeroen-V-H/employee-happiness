@@ -360,7 +360,6 @@
 				isFromThisWeek: true
 			};
 		} else {
-			console.log('empty');
 			mood = {
 				happiness: 3,
 				business: 3,
@@ -474,7 +473,7 @@
 			answer = answers[Math.floor(answers.length*Math.random())];
 
 		document.getElementById('period-answer').textContent = answer;
-		setTimeout(showNewPeriodAnswer, 5000);
+		periodAnswerTimer = setTimeout(showNewPeriodAnswer, 5000);
 	};
 	
 
