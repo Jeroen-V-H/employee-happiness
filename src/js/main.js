@@ -293,7 +293,7 @@
 		let rowCounter = 0;
 		dataset.forEach((employeeRow) => {
 			rowCounter++;
-			const email = employeeRow[fields.email]
+			const email = employeeRow[fields.email].toLowerCase();
 			let employee,
 				isNewlyAdded = false;
 
