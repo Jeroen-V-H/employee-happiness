@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="nl-nl">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	
+	<title>cursor</title>
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	<link rel="stylesheet" href="css/style-aframe.css">
+
+	<script src="https://aframe.io/releases/0.7.0/aframe.min.js"></script>
+</head>
+<body>
+
+	<a-scene id="aframe-canvas">
+		<a-entity id="navigation" position="0, 2, -2">
+			<a-plane color="grey"></a-plane>
+			<a-text id="week-number__value" value="40"></a-text>
+			<a-triangle id="show-prev-period" scale="0.3, 0.2, 1" position="-0.3, 0, 0.1" rotation="0, 0, 90"></a-triangle>
+			<!-- <a-triangle id="show-next-period" scale="0.3, 0.2, 1" position="0.3, 0, 0.1" rotation="0, 0, -90"></a-triangle> -->
+		</a-entity>
+
+		<a-camera>
+			<a-cursor></a-cursor>
+		</a-camera>
+
+	</a-scene>
+
+	<script>
+	  var boxEl = document.querySelector('a-triangle');
+	  boxEl.addEventListener('mouseenter', function () {
+	    boxEl.setAttribute('scale', {x: 0.45, y: 0.3, z: 1});
+	  });
+	  boxEl.addEventListener('mouseleave', function () {
+	    boxEl.setAttribute('scale', {x: 0.3, y: 0.2, z: 1});
+	  });
+	  boxEl.addEventListener('click', function() {
+	    boxEl.setAttribute('color', 'green');
+	    console.log('klik');
+	  });
+	</script>
+
+	
+</body>
+</html>

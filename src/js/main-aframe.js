@@ -5,16 +5,17 @@
 	/* globals zup */ //Tell jshint zup exists as global var
 
 
-	const graphElm = document.getElementById('graph'),
-		width = graphElm.clientWidth,
-		height = graphElm.clientHeight,
+	const graphElm = document.getElementById('aframe-graph'),
+		// width = graphElm.clientWidth,
+		// height = graphElm.clientHeight,
+		width = 6,
+		height = 6,
 		forceStrength = 0.1,
 		simulationDuration = 2000;
 
 	const firstWeekNumber = 32;// number of the first week in the data
 
-	// const dataFolder = 'data/team-dotnet/',
-	const dataFolder = 'data/team-amersforce/',
+	const dataFolder = 'data/',
 		dataFileUrlStart = dataFolder + 'Weekly happiness form ',
 		dataFileUrlEnd = ' (Responses).csv';
 	
@@ -37,18 +38,18 @@
 		maxBusinessScore = Math.max(...businessScores),
 		minHealthScore = minHappinessScore + minBusinessScore,
 		maxHealthScore = maxHappinessScore + maxBusinessScore,
-		happinessScale = d3.scaleLinear().domain([1, 5]).range([0, width]),
-		businessScale = d3.scaleLinear().domain([1, 5]).range([height, 0]);
+		happinessScale = d3.scaleLinear().domain([1, 5]).range([(-1*width/2), width/2]),
+		businessScale = d3.scaleLinear().domain([1, 5]).range([-1*height/2, height/2]);
 
 	let simulationTimer,
 		employeeNodes,
 		prevMoodNodes,
-		nodeRadius = 25,// will be calculated by js
-		nodeDistance = 3;
+		// nodeRadius = width/80,
+		nodeRadius = width/40,
+		nodeDistance = 2,
+		z = 0;
 
-	let graph = d3.select('#graph')
-			.attr('width', width)
-			.attr('height', height);
+	let graph = d3.select('#aframe-graph');
 
 	// define force functions
 	const forceXHappiness = d3.forceX(function(d) {
@@ -116,19 +117,16 @@
 	* @returns {undefined}
 	*/
 	const setHealthColors = function() {
-		employeeNodes.style('background', function(d) {
+		employeeNodes.attr('color', function(d) {
 			const periodHealthScore = d.periods[currPeriodIdx].health;
 
 			// minHealthScore should have colorIdx 0
 			const colorIdx = periodHealthScore - minHealthScore;
-			return colors[colorIdx];
-		})
-		.style('color', function(d) {
-			const periodHealthScore = d.periods[currPeriodIdx].health;
-
-			// minHealthScore should have colorIdx 0
-			const colorIdx = periodHealthScore - minHealthScore;
-			return colors[colorIdx];
+			let color = '#00bdfa';
+			if (colorIdx === parseInt(colorIdx, 10)) {
+				color = colors[colorIdx];
+			}
+			return color;
 		});
 	};
 
@@ -141,6 +139,14 @@
 	const setRecentness = function() {
 		employeeNodes.classed('not-from-this-week', (d) => {
 			return (!d.periods[currPeriodIdx].isFromThisWeek);
+		});
+		employeeNodes.attr('scale', (d) => {
+			const scale = (d.periods[currPeriodIdx].isFromThisWeek) ? {x: 1, y: 1, z: 1} : {x: 0.5, y: 0.5, z: 0.5};
+			return scale;
+		});
+		employeeNodes.attr('opacity', (d) => {
+			const opacity = (d.periods[currPeriodIdx].isFromThisWeek) ? 1 : 0.5;
+			return opacity;
 		});
 	};
 
@@ -190,7 +196,7 @@
 				.restart();
 			scheduleSimulationStop();
 
-			document.getElementById('week-number__value').textContent = firstWeekNumber + currPeriodIdx;
+			document.getElementById('week-number__value').setAttribute('value', firstWeekNumber + currPeriodIdx);
 	};
 	
 
@@ -388,7 +394,6 @@
 
 		// loop through all data
 		rawDatasetStrings.forEach((datasetString, periodIdx) => {
-			console.log(datasetString);
 			const dataset = ssv.parse(datasetString);
 			processPeriodData(dataset, periodIdx);
 		});
@@ -413,12 +418,9 @@
 	* @returns {undefined}
 	*/
 	const tickHandler = function(node) {
-		node.style('left', function(d) {
-				return d.x + 'px';
-			})
-			.style('top', function(d) {
-				return d.y + 'px';
-			})
+		node.attr('position', function(d) {
+			return { x:d.x, y:d.y, z:z};
+		});
 	};
 
 
@@ -485,11 +487,11 @@
 	* @returns {undefined}
 	*/
 	const showPeriodAnswers = function() {
-		const answerBox = document.getElementById('period-answer'),
-			questions = periodQuestions[currPeriodIdx];
+		// const answerBox = document.getElementById('period-answer'),
+		// 	questions = periodQuestions[currPeriodIdx];
 			
-		document.getElementById('period-question').textContent = questions.question;
-		showNewPeriodAnswer();
+		// document.getElementById('period-question').textContent = questions.question;
+		// showNewPeriodAnswer();
 	};
 	
 
@@ -504,8 +506,68 @@
 		clearTimeout(simulationTimer);
 		simulationTimer = setTimeout(() => {
 			simulation.stop();
-			showMoodTrace();
+			// showMoodTrace();
 		}, simulationDuration);
+	};
+	
+
+	/**
+	* draw the actual graph
+	* @returns {undefined}
+	*/
+	const drawVRGraph = function() {
+		// add shapes
+		employeeNodes = graph.selectAll('a-sphere')
+			.data(employees)
+			.enter()
+			.append('a-sphere')
+			.attr('data-initials', d => d.initials)
+			.attr('data-happiness', (d) => {
+				const firstPeriod = d.periods[0];
+				return firstPeriod.happiness;
+			})
+			.attr('data-business', (d) => {
+				const firstPeriod = d.periods[0];
+				return firstPeriod.business;
+			})
+			.attr('radius', nodeRadius)
+			.attr('position', (d) => {
+				const firstPeriod = d.periods[0],
+					x = happinessScale(firstPeriod.happiness),
+					y = businessScale(firstPeriod.business);
+
+				return x+', '+y+', '+z;
+			})
+			.attr('color', '#00bdfa')
+			.attr('title', d => d.name)
+			.attr('class', 'employee-node')
+			.on('click', showEmployeeDetails)
+
+		const fontSize = 0.5;
+		employeeNodes.append('a-text')
+			.attr('value', (d) => {
+				return d.initials;
+			})
+			.attr('position', `0, 0, ${nodeRadius}`)
+			.attr('scale', `${fontSize}, ${fontSize}, ${fontSize}`)
+			.attr('color', 'black')
+			.attr('align', 'center')
+
+		// // now that we have nodes on screen, we can check their dimensions
+		// let typicalNode = graph.select('.employee-node:first-child').node();
+		// nodeRadius = typicalNode.getBoundingClientRect().width/2,
+		nodeDistance = nodeRadius * 0.2;
+
+		simulation.nodes(employees)
+			.on('tick', () => { tickHandler(employeeNodes) });
+		scheduleSimulationStop();
+		setTimeout(() => {changePeriod(+1);}, 1000);
+
+		// graphElm.querySelectorAll('.employee-node').forEach((elm) => {
+		// 	let div = document.createElement('div');
+		// 	div.classList.add('mood-trace');
+		// 	elm.append(div);
+		// });
 	};
 	
 	
@@ -558,26 +620,40 @@
 	*/
 	const initInterface = function() {
 		// initButtons
-		d3.select('#show-mood').on('click', function() {
-			changePeriod();
-		});
+		// d3.select('#show-mood').on('click', function() {
+		// 	changePeriod();
+		// });
 
-		d3.select('#show-next-period').on('click', function() {
-			changePeriod(+1);
-		});
+		// d3.select('#show-next-period').on('click', function() {
+		// 	changePeriod(+1);
+		// });
 
-		d3.select('#show-prev-period').on('click', function() {
+		// d3.select('#show-prev-period').on('click', function() {
+		// 	changePeriod(-1);
+		// });
+		// const prevBtn = document.getElementById('show-prev-period');
+		// prevBtn.addEventListener('mouseEnter', function() {
+		// 	prevBtn.setAttribute('color', '#00bdfa');
+		// });
+		// 	console.log(prevBtn);
+
+		// var boxEl = document.querySelector('a-triangle');
+		const prevBtn = document.getElementById('show-prev-period'),
+			nextBtn = document.getElementById('show-next-period');
+		prevBtn.addEventListener('mouseenter', function () {
+			prevBtn.setAttribute('scale', {x: 0.45, y: 0.3, z: 1});
 			changePeriod(-1);
 		});
-
-		// d3.select('#combined').on('click', function() {
-		// 	simulation
-		// 		.force('forceX', forceXCombined)
-		// 		.force('forceY', forceYCombined)
-		// 		.alphaTarget(0.5)
-		// 		.restart();
-		// 	scheduleSimulationStop();
-		// });
+		prevBtn.addEventListener('mouseleave', function () {
+		  prevBtn.setAttribute('scale', {x: 0.3, y: 0.2, z: 1});
+		});
+		nextBtn.addEventListener('mouseenter', function () {
+			nextBtn.setAttribute('scale', {x: 0.45, y: 0.3, z: 1});
+			changePeriod(1);
+		});
+		nextBtn.addEventListener('mouseleave', function () {
+		  nextBtn.setAttribute('scale', {x: 0.3, y: 0.2, z: 1});
+		});
 
 	};
 
@@ -604,39 +680,16 @@
 	*/
 	const createFileList = function() {
 
-		const urls = [];
-
-		for (let weekNumber=1; weekNumber < 54; weekNumber++) {
-			const urlToCheck = dataFileUrlStart + weekNumber + dataFileUrlEnd;
-
-			if (fileExists(urlToCheck)) {
-				urls.push(urlToCheck);
-			}
-		}
-		
-		return urls;
-	};
-
-
-
-	/**
-	* create a list of files to load
-	* @returns {undefined}
-	*/
-	const createFileList_bak = function() {
-
 		let weekNumber = firstWeekNumber,
 			urlToCheck,
 			urls = [];
 
 		const createUrl = function(weekNumber) {
-			console.log(dataFileUrlStart + weekNumber + dataFileUrlEnd);
 			return dataFileUrlStart + weekNumber + dataFileUrlEnd;
 		}
 
 		urlToCheck = createUrl(weekNumber);
 
-		
 		while (fileExists(urlToCheck)) {
 			urls.push(urlToCheck);
 			weekNumber ++;
@@ -665,7 +718,8 @@
 	const loadHandler = function(error, ...rawDatasetStrings) {
 		initInterface();
 		processData(rawDatasetStrings);
-		drawGraph();
+		// drawGraph();
+		drawVRGraph();
 	}// loadHandler
 	
 
