@@ -13,8 +13,8 @@
 
 	const firstWeekNumber = 32;// number of the first week in the data
 
-	// const dataFolder = 'data/team-dotnet/',
-	const dataFolder = 'data/team-amersforce/',
+	const dataFolder = 'data/team-dotnet/',
+	// const dataFolder = 'data/team-amersforce/',
 		dataFileUrlStart = dataFolder + 'Weekly happiness form ',
 		dataFileUrlEnd = ' (Responses).csv';
 	
@@ -570,15 +570,6 @@
 			changePeriod(-1);
 		});
 
-		// d3.select('#combined').on('click', function() {
-		// 	simulation
-		// 		.force('forceX', forceXCombined)
-		// 		.force('forceY', forceYCombined)
-		// 		.alphaTarget(0.5)
-		// 		.restart();
-		// 	scheduleSimulationStop();
-		// });
-
 	};
 
 
@@ -683,6 +674,10 @@
 		});
 		queue.await(loadHandler);
 	};
+
+
+	//-- Start google sheets stuff
+	//-- End google sheets stuff
 
 
 
