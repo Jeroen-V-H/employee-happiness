@@ -1,3 +1,7 @@
+// helper to access google sheets
+// instantiate like this:
+// const options = { CLIENT_ID: YOUR_CLIENT_ID, API_KEY: YOUR_API_KEY },
+// 		googleSheetHelper = window.createGoogleSheetHelper();
 window.createGoogleSheetsHelper = function(options) {
 
 	return (function(options) {
@@ -85,9 +89,9 @@ window.createGoogleSheetsHelper = function(options) {
 		};
 		
 
-
 		/**
 		* get sheet data
+		* if you use range, specify range in a1 notation https://developers.google.com/sheets/api/guides/concepts#a1_notation
 		* @param {object} options - Contains at least spreadsheetId, range
 		* @returns {promise} api-calls promise, returning response's result-property
 		*/

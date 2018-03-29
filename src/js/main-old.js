@@ -26,8 +26,6 @@
 		prevPeriodIdx = 0,
 		totalPeriods = 0;
 
-	let sheetHelper;
-
 	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
 	// https://gka.github.io/palettes/#colors=#c00,#fc0|steps=4|bez=1|coL=1
 	const colors = ['#cc0000','#cc0000','#cc0000','#e06000','#f19800','#ffcc00','#b9b400','#709b00','#008000'],
@@ -382,74 +380,19 @@
 	* process the data so we can use it
 	* @returns {undefined}
 	*/
-	// const processData = function(rawDatasetStrings) {
-	// 	totalPeriods = rawDatasetStrings.length;
-	// 	setWeek();
+	const processData = function(rawDatasetStrings) {
+		totalPeriods = rawDatasetStrings.length;
+		setWeek();
 
-	// 	const ssv = d3.dsvFormat(';');// define semicolon separated value parser
+		const ssv = d3.dsvFormat(';');// define semicolon separated value parser
 
-	// 	// loop through all data
-	// 	rawDatasetStrings.forEach((datasetString, periodIdx) => {
-	// 		console.log(datasetString);
-	// 		const dataset = ssv.parse(datasetString);
-	// 		processPeriodData(dataset, periodIdx);
-	// 	});
-	// };
-
-
-	/**
-	* divide sheet data in array per week
-	* @returns {array}
-	*/
-	const divideDataIntoWeeks = function(data) {
-		const dataPerWeek = [];
-		
-		let lastWeekNr,
-			weekData;
-
-		data.forEach((row) => {
-			// const row = data[0];
-			// console.log(row);
-			const weekNr = getRowWeekNumber(row);
-
-			if (!lastWeekNr || weekNr !== lastWeekNr) {
-				// first row for this week
-				weekData = {
-					weekNr,
-					data: []
-				};
-				dataPerWeek.push(weekData);
-				lastWeekNr = weekNr;
-			}
-			weekData.data.push(row);
+		// loop through all data
+		rawDatasetStrings.forEach((datasetString, periodIdx) => {
+			console.log(datasetString);
+			const dataset = ssv.parse(datasetString);
+			processPeriodData(dataset, periodIdx);
 		});
-
-		console.log(dataPerWeek);
 	};
-	
-
-		/**
-	* process the data so we can use it
-	* @returns {undefined}
-	*/
-	const processData = function(data) {
-		console.log('sheetData:', data);
-
-		const dataPerWeek = divideDataIntoWeeks(data);
-		// totalPeriods = rawDatasetStrings.length;
-		// setWeek();
-
-		// const ssv = d3.dsvFormat(';');// define semicolon separated value parser
-
-		// // loop through all data
-		// rawDatasetStrings.forEach((datasetString, periodIdx) => {
-		// 	console.log(datasetString);
-		// 	const dataset = ssv.parse(datasetString);
-		// 	processPeriodData(dataset, periodIdx);
-		// });
-	};
-
-	
 
 
 
@@ -635,14 +578,14 @@
 	* 
 	* @returns {undefined}
 	*/
-	// const fileExists = function(url) {
-	//     var http = new XMLHttpRequest();
-	//     http.open('HEAD', url, false);
-	//     // this line will show an error in the console
-	//     // this is not a js-error, so we can't use try catch
-	//     http.send();
-	//     return http.status !== 404;
-	// };
+	const fileExists = function(url) {
+	    var http = new XMLHttpRequest();
+	    http.open('HEAD', url, false);
+	    // this line will show an error in the console
+	    // this is not a js-error, so we can't use try catch
+	    http.send();
+	    return http.status !== 404;
+	};
 
 
 
@@ -650,20 +593,48 @@
 	* create a list of files to load
 	* @returns {undefined}
 	*/
-	// const createFileList = function() {
+	const createFileList = function() {
 
-	// 	const urls = [];
+		const urls = [];
 
-	// 	for (let weekNumber=1; weekNumber < 54; weekNumber++) {
-	// 		const urlToCheck = dataFileUrlStart + weekNumber + dataFileUrlEnd;
+		for (let weekNumber=1; weekNumber < 54; weekNumber++) {
+			const urlToCheck = dataFileUrlStart + weekNumber + dataFileUrlEnd;
 
-	// 		if (fileExists(urlToCheck)) {
-	// 			urls.push(urlToCheck);
-	// 		}
-	// 	}
+			if (fileExists(urlToCheck)) {
+				urls.push(urlToCheck);
+			}
+		}
 		
-	// 	return urls;
-	// };
+		return urls;
+	};
+
+
+
+	/**
+	* create a list of files to load
+	* @returns {undefined}
+	*/
+	const createFileList_bak = function() {
+
+		let weekNumber = firstWeekNumber,
+			urlToCheck,
+			urls = [];
+
+		const createUrl = function(weekNumber) {
+			console.log(dataFileUrlStart + weekNumber + dataFileUrlEnd);
+			return dataFileUrlStart + weekNumber + dataFileUrlEnd;
+		}
+
+		urlToCheck = createUrl(weekNumber);
+
+		
+		while (fileExists(urlToCheck)) {
+			urls.push(urlToCheck);
+			weekNumber ++;
+			urlToCheck = createUrl(weekNumber);
+		}
+		return urls;
+	};
 
 
 
@@ -694,7 +665,7 @@
 	* load data and kick off rendering
 	* @returns {undefined}
 	*/
-	const loadData_bak = function() {
+	const loadData = function() {
 		const urlsToLoad = createFileList();
 
 		let queue = d3.queue();
@@ -704,91 +675,8 @@
 		queue.await(loadHandler);
 	};
 
-	//-- Start helper functions
-
-		/**
-		* calculate iso week number
-		* found at https://stackoverflow.com/questions/6117814/get-week-of-year-in-javascript-like-in-php
-		* @param {Date} d - Date for which to calculate week number
-		* @returns {array} array containing year and number
-		*/
-		const getWeekNumber = function(d) {
-			// Copy date so don't modify original
-			d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-			// Set to nearest Thursday: current date + 4 - current day number
-			// Make Sunday's day number 7
-			d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
-			// Get first day of year
-			var yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-			// Calculate full weeks to nearest Thursday
-			var weekNo = Math.ceil(( ( (d - yearStart) / 86400000) + 1)/7);
-			// Return array of year and week number
-			return [d.getUTCFullYear(), weekNo];
-		}
-
-		/**
-		* get the week number for an entry in the sheet
-		* @param {array} row - A row in the sheet
-		* @returns {number}
-		*/
-		const getRowWeekNumber = function(row) {
-			// date info in sheet has format dd/mm/yyyy hh:mm:ss
-			// don't rely on Date to parse that correctly
-			const tmStr = row[0],
-				day = parseInt(tmStr.substr(0, 2), 10),
-				month = parseInt(tmStr.substr(3, 2), 10) -1,
-				year = parseInt(tmStr.substr(6, 4), 10),
-				tm = new Date(year, month, day),
-				weekNr = getWeekNumber(tm)[1];
-
-			return weekNr;
-		};
-		
-
-	//-- End helper functions
-
 
 	//-- Start google sheets stuff
-
-
-		/**
-		* read data from the sheet
-		* @returns {undefined}
-		*/
-		const readData = function() {
-			const sheetTabName = 'Team happiness responses',
-				cellRange = 'A2:G',// all columns, skip 1st row with titles
-				range = "'" + sheetTabName + "'!" + cellRange;// range in a1 notation https://developers.google.com/sheets/api/guides/concepts#a1_notation
-
-			const options = {
-				spreadsheetId: '1K4YbGsCSSIJhB0nYArs0XouoOqT1xGyM2KWOdny-tLs',
-				range
-			};
-		
-			// get data in promise
-			sheetHelper.getData(options)
-			.then((result) => {
-				const data = result.values;
-				processData(data);
-			})
-		};
-		
-		
-		/**
-		* get data from google sheet
-		* @returns {undefined}
-		*/
-		const getSheetHelper = function() {
-			// use api key etc from window.secretStuff (which is not in version control)
-			const sheetOptions = {
-				CLIENT_ID: window.secretStuff.CLIENT_ID,
-				API_KEY: window.secretStuff.API_KEY
-			};
-		
-			sheetHelper = window.createGoogleSheetsHelper(sheetOptions);
-		};
-		
-		
 	//-- End google sheets stuff
 
 
@@ -799,10 +687,7 @@
 	* @returns {undefined}
 	*/
 	const init = function() {
-		// loadData();// load data and kick things off
-		
-		document.body.addEventListener('googlesheethelperenabled', readData);
-		getSheetHelper();
+		loadData();// load data and kick things off
 	};
 
 
