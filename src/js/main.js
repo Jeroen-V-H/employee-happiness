@@ -11,8 +11,6 @@
 		forceStrength = 0.1,
 		simulationDuration = 2000;
 
-	const firstWeekNumber = 32;// number of the first week in the data
-
 	// const dataFolder = 'data/team-dotnet/',
 	const dataFolder = 'data/team-amersforce/',
 		dataFileUrlStart = dataFolder + 'Weekly happiness form ',
@@ -20,8 +18,10 @@
 	
 	let employeeEmails = [],
 		employees = [],
+		weekDatasets = [],
 		periodQuestions = [],
 		periodAnswerTimer,
+		currWeekNumber,
 		currPeriodIdx = -1,
 		prevPeriodIdx = 0,
 		totalPeriods = 0;
@@ -163,6 +163,7 @@
 			currPeriodIdx = 0;
 		}
 		prevPeriodIdx = Math.max(0, prevPeriodIdx);
+		currWeekNumber = weekDatasets[currPeriodIdx].weekNr;
 
 		graphElm.querySelectorAll('.mood-trace').forEach((traceElm) => {
 			traceElm.classList.remove('mood-trace--is-visible');
@@ -192,28 +193,28 @@
 			.restart();
 		scheduleSimulationStop();
 
-		document.getElementById('week-number__value').textContent = firstWeekNumber + currPeriodIdx;
+		document.getElementById('week-number__value').textContent = currWeekNumber;
 	};
 	
 
 
 	/**
-	* create get the exact wording of the questions in this period's questionaire
+	* get the exact wording of the questions in this period's questionaire
 	* wording may change; order of the topics should remain the same
 	* @returns {object} fields with corresponding question
 	*/
-	const getPeriodQuestionFields = function(questions) {
-		const fields = {
-			timestamp: questions[0],
-			email: questions[1],
-			name: questions[2],
-			happiness: questions[3],
-			business: questions[4],
-			otherQuestion: questions[5]
-		};
+	// const getPeriodQuestionFields = function(questions) {
+	// 	const fields = {
+	// 		timestamp: questions[0],
+	// 		email: questions[1],
+	// 		name: questions[2],
+	// 		happiness: questions[3],
+	// 		business: questions[4],
+	// 		otherQuestion: questions[5]
+	// 	};
 
-		return fields;
-	};
+	// 	return fields;
+	// };
 
 
 
@@ -303,7 +304,8 @@
 
 		// USE ONLY REMARK HERE NOW
 		const periodQuestion = {
-			question: fields.otherQuestion,
+			// question: fields.otherQuestion,
+			question: 'remarks',
 			answers: []
 		};
 
@@ -418,7 +420,6 @@
 	* @returns {array}
 	*/
 	const divideDataIntoWeeks = function(data) {
-		const weekDatasets = [];
 		let lastWeekNr,
 			weekData;
 
@@ -541,7 +542,7 @@
 			answer = answers[Math.floor(answers.length*Math.random())];
 
 		document.getElementById('period-answer').textContent = answer;
-		periodAnswerTimer = setTimeout(showNewPeriodAnswer, 5000);
+		periodAnswerTimer = setTimeout(showNewPeriodAnswer, 8000);
 	};
 	
 
