@@ -16,7 +16,7 @@
 		dataFileUrlStart = dataFolder + 'Weekly happiness form ',
 		dataFileUrlEnd = ' (Responses).csv';
 	
-	let employeeEmails = [],
+	let employeeEmails = [],// will contain all employees' email (without tld)
 		employees = [],
 		weekDatasets = [],
 		periodQuestions = [],
@@ -74,6 +74,22 @@
 		.force('collide', forceCollide);
 
 
+
+	/**
+	* strip top level domain of of email (to prevent false duplicates from .com and .nl addresses)
+	* @param {string} email
+	* @returns {string} the stripped email
+	*/
+	const getEmailWithoutTld = function(email) {
+		const regex = /(.+)@([^\.]+)/,
+			matches = email.match(regex);
+
+		if (matches) {
+			email = matches[1] + '@' + matches[2];
+		}
+		return email;
+	};
+	
 
 	/**
 	* get employee's initials
@@ -312,7 +328,8 @@
 		let rowCounter = 0;
 		weekData.data.forEach((employeeRow) => {
 			rowCounter++;
-			const email = employeeRow[fields.email].toLowerCase();
+			const email = employeeRow[fields.email].toLowerCase(),
+				emailWithoutTld = getEmailWithoutTld(email);
 			let employee,
 				isNewlyAdded = false;
 
