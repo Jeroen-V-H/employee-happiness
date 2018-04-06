@@ -158,7 +158,7 @@
 			prevPeriodIdx = currPeriodIdx;
 			currPeriodIdx = newPeriodIdx;
 		}
-		if (newPeriodIdx <= 0) {
+		if (newPeriodIdx < 0) {
 			// we start at -1 to make first call to show next show the first period
 			currPeriodIdx = 0;
 		}
@@ -449,7 +449,9 @@
 		// console.log('sheetData:', data);
 
 		const weekDatasets = divideDataIntoWeeks(data);
-		console.log('weekDatasets:', weekDatasets);
+		// console.log('weekDatasets:', weekDatasets);
+		totalPeriods = weekDatasets.length;
+		setWeek();
 		
 		weekDatasets.forEach((weekData, weekIdx) => {
 			processWeekData(weekData, weekIdx);
@@ -778,6 +780,7 @@
 				const data = result.values;
 				processData(data);
 				drawGraph();
+				initInterface();
 			})
 		};
 		
