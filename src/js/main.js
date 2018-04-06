@@ -153,46 +153,46 @@
 	* @returns {undefined}
 	*/
 	const changePeriod = function(increment = 0) {
-			const newPeriodIdx = currPeriodIdx + increment;
-			if (newPeriodIdx >= 0 && newPeriodIdx < totalPeriods) {
-				prevPeriodIdx = currPeriodIdx;
-				currPeriodIdx = newPeriodIdx;
-			}
-			if (newPeriodIdx < 0) {
-				// we start at -1 to make first call to show next show the first period
-				currPeriodIdx = 0;
-			}
-			prevPeriodIdx = Math.max(0, prevPeriodIdx);
+		const newPeriodIdx = currPeriodIdx + increment;
+		if (newPeriodIdx >= 0 && newPeriodIdx < totalPeriods) {
+			prevPeriodIdx = currPeriodIdx;
+			currPeriodIdx = newPeriodIdx;
+		}
+		if (newPeriodIdx <= 0) {
+			// we start at -1 to make first call to show next show the first period
+			currPeriodIdx = 0;
+		}
+		prevPeriodIdx = Math.max(0, prevPeriodIdx);
 
-			graphElm.querySelectorAll('.mood-trace').forEach((traceElm) => {
-				traceElm.classList.remove('mood-trace--is-visible');
-				traceElm.style.borderLeftWidth = 0;
-			});
+		graphElm.querySelectorAll('.mood-trace').forEach((traceElm) => {
+			traceElm.classList.remove('mood-trace--is-visible');
+			traceElm.style.borderLeftWidth = 0;
+		});
 
-			if (currPeriodIdx === 0) {
-				document.getElementById('show-prev-period').setAttribute('disabled', 'disabled');
-			} else {
-				document.getElementById('show-prev-period').removeAttribute('disabled');
-			}
+		if (currPeriodIdx === 0) {
+			document.getElementById('show-prev-period').setAttribute('disabled', 'disabled');
+		} else {
+			document.getElementById('show-prev-period').removeAttribute('disabled');
+		}
 
-			if (currPeriodIdx === totalPeriods-1) {
-				document.getElementById('show-next-period').setAttribute('disabled', 'disabled');
-			} else {
-				document.getElementById('show-next-period').removeAttribute('disabled');
-			}
+		if (currPeriodIdx === totalPeriods-1) {
+			document.getElementById('show-next-period').setAttribute('disabled', 'disabled');
+		} else {
+			document.getElementById('show-next-period').removeAttribute('disabled');
+		}
 
-			setHealthColors();
-			setRecentness();
-			showPeriodAnswers();
+		setHealthColors();
+		setRecentness();
+		showPeriodAnswers();
 
-			simulation
-				.force('forceX', forceXHappiness)
-				.force('forceY', forceYBusiness)
-				.alphaTarget(0.5)
-				.restart();
-			scheduleSimulationStop();
+		simulation
+			.force('forceX', forceXHappiness)
+			.force('forceY', forceYBusiness)
+			.alphaTarget(0.5)
+			.restart();
+		scheduleSimulationStop();
 
-			document.getElementById('week-number__value').textContent = firstWeekNumber + currPeriodIdx;
+		document.getElementById('week-number__value').textContent = firstWeekNumber + currPeriodIdx;
 	};
 	
 
@@ -218,18 +218,18 @@
 
 
 	/**
-	* get the object for the team avarage; create it if it doesn't exist yet
+	* get the object for the team average; create it if it doesn't exist yet
 	* @returns {object} object like employee-object
 	*/
-	const getAvarageObject = function() {
-		const avgString = 'team-avarage';
+	const getAverageObject = function() {
+		const avgString = 'team-average';
 		let avgObj,
 			avgIndex = employeeEmails.indexOf(avgString);
 
 		if (avgIndex === -1) {
 			avgObj = {
 				email: '',
-				name: 'Team Avarage',
+				name: 'Team Average',
 				initials: 'AVG',
 				periods: []
 			};
@@ -248,9 +248,9 @@
 	* for new employees, add dummy moods for the periods where they weren't present yet
 	* @returns {undefined}
 	*/
-	const addNewEmployeeDummyMoods = function(employee, mood, periodIdx) {
+	const addNewEmployeeDummyMoods = function(employee, mood, weekIdx) {
 		const dummyMood = Object.assign({}, mood, { isFromThisWeek: false});
-		for (let i=0; i<periodIdx; i++) {
+		for (let i=0; i<weekIdx; i++) {
 			employee.periods.push(dummyMood);
 		}
 	};
@@ -261,15 +261,15 @@
 	* add moods for employees that already have an entry, but are not in the current period
 	* @returns {undefined}
 	*/
-	const addMissingEmployeeMoods = function(dataset, periodIdx) {
+	const addMissingEmployeeMoods = function(dataset, weekIdx) {
 		employees.forEach((employee) => {
 			const periods = employee.periods,
 				periodCount = periods.length;
 
-			if (periodCount <= periodIdx) {
+			if (periodCount <= weekIdx) {
 				// we're missing periods; take the last known mood as reference
 				const dummyMood = Object.assign({}, periods[periodCount-1], {isFromThisWeek: false});
-				for (let i=periodCount; i <= periodIdx; i++) {
+				for (let i=periodCount; i <= weekIdx; i++) {
 					periods.push(dummyMood);
 				}
 			}
@@ -279,22 +279,36 @@
 
 	/**
 	* process dataset of 1 period
+	* @param {object} weekData - Current week's data {weekNr, data}
+	* @param {number} weekIdx - Index of this week in weekDatasets (useful for tracking how many weeks have been processed)
 	* @returns {undefined}
 	*/
-	const processPeriodData = function(dataset, periodIdx) {
-		const fields = getPeriodQuestionFields(dataset.columns);
+	const processWeekData = function(weekData, weekIdx) {
+
+		//	hierin kwam vroeger 1 excel sheet
+		// const fields = getPeriodQuestionFields(dataset);
+		// map column numbers to vars
+		const fields = {
+			timestamp: 0,
+			email: 1,
+			name: 2,
+			happiness: 3,
+			business: 4,
+			otherQuestion: 5
+		};
 
 		let teamHappiness = 0,
 			teamBusiness = 0,
-			teamHealth = 0,
+			teamHealth = 0;
 
-		periodQuestion = {
+		// USE ONLY REMARK HERE NOW
+		const periodQuestion = {
 			question: fields.otherQuestion,
 			answers: []
 		};
 
 		let rowCounter = 0;
-		dataset.forEach((employeeRow) => {
+		weekData.data.forEach((employeeRow) => {
 			rowCounter++;
 			const email = employeeRow[fields.email].toLowerCase();
 			let employee,
@@ -304,6 +318,7 @@
 			// d3 works easier with normal arrays than with associative ones, so I can't use email as array-index
 			let employeeIndex = employeeEmails.indexOf(email);
 			if (employeeIndex === -1) {
+				// add new employee to array
 				employee = {
 					email: email,
 					name: employeeRow[fields.name],
@@ -333,10 +348,11 @@
 					},
 					isFromThisWeek: true
 				};
-			// I'm still assuming that every employee is present in every period.
 
+			// I'm still assuming that every employee is present in every period.
+			// so we need to add a dummy-mood for new employees for all past weeks
 			if (isNewlyAdded) {
-				addNewEmployeeDummyMoods(employee, mood, periodIdx);
+				addNewEmployeeDummyMoods(employee, mood, weekIdx);
 			}
 			employee.periods.push(mood);
 
@@ -351,8 +367,8 @@
 
 		periodQuestions.push(periodQuestion);
 
-		const avgObj = getAvarageObject(),
-			numEntries = dataset.length;
+		const avgObj = getAverageObject(),
+			numEntries = weekData.length;
 		let mood;
 
 		if (numEntries > 0) {
@@ -373,7 +389,7 @@
 		avgObj.periods.push(mood);
 
 		// add moods for employees that were in previous periods, but not in this one
-		addMissingEmployeeMoods(dataset, periodIdx);
+		addMissingEmployeeMoods(weekData, weekIdx);
 	};
 	
 
@@ -402,14 +418,11 @@
 	* @returns {array}
 	*/
 	const divideDataIntoWeeks = function(data) {
-		const dataPerWeek = [];
-		
+		const weekDatasets = [];
 		let lastWeekNr,
 			weekData;
 
 		data.forEach((row) => {
-			// const row = data[0];
-			// console.log(row);
 			const weekNr = getRowWeekNumber(row);
 
 			if (!lastWeekNr || weekNr !== lastWeekNr) {
@@ -418,13 +431,13 @@
 					weekNr,
 					data: []
 				};
-				dataPerWeek.push(weekData);
+				weekDatasets.push(weekData);
 				lastWeekNr = weekNr;
 			}
 			weekData.data.push(row);
 		});
 
-		console.log(dataPerWeek);
+		return weekDatasets;
 	};
 	
 
@@ -433,20 +446,14 @@
 	* @returns {undefined}
 	*/
 	const processData = function(data) {
-		console.log('sheetData:', data);
+		// console.log('sheetData:', data);
 
-		const dataPerWeek = divideDataIntoWeeks(data);
-		// totalPeriods = rawDatasetStrings.length;
-		// setWeek();
-
-		// const ssv = d3.dsvFormat(';');// define semicolon separated value parser
-
-		// // loop through all data
-		// rawDatasetStrings.forEach((datasetString, periodIdx) => {
-		// 	console.log(datasetString);
-		// 	const dataset = ssv.parse(datasetString);
-		// 	processPeriodData(dataset, periodIdx);
-		// });
+		const weekDatasets = divideDataIntoWeeks(data);
+		console.log('weekDatasets:', weekDatasets);
+		
+		weekDatasets.forEach((weekData, weekIdx) => {
+			processWeekData(weekData, weekIdx);
+		});
 	};
 
 	
@@ -682,11 +689,11 @@
 	* handle data being loaded
 	* @returns {undefined}
 	*/
-	const loadHandler = function(error, ...rawDatasetStrings) {
-		initInterface();
-		processData(rawDatasetStrings);
-		drawGraph();
-	}// loadHandler
+	// const loadHandler = function(error, ...rawDatasetStrings) {
+	// 	initInterface();
+	// 	processData(rawDatasetStrings);
+	// 	drawGraph();
+	// }// loadHandler
 	
 
 
@@ -694,15 +701,15 @@
 	* load data and kick off rendering
 	* @returns {undefined}
 	*/
-	const loadData_bak = function() {
-		const urlsToLoad = createFileList();
+	// const loadData_bak = function() {
+	// 	const urlsToLoad = createFileList();
 
-		let queue = d3.queue();
-		urlsToLoad.forEach((url) => {
-			queue = queue.defer(d3.text, url);
-		});
-		queue.await(loadHandler);
-	};
+	// 	let queue = d3.queue();
+	// 	urlsToLoad.forEach((url) => {
+	// 		queue = queue.defer(d3.text, url);
+	// 	});
+	// 	queue.await(loadHandler);
+	// };
 
 	//-- Start helper functions
 
@@ -770,6 +777,7 @@
 			.then((result) => {
 				const data = result.values;
 				processData(data);
+				drawGraph();
 			})
 		};
 		
