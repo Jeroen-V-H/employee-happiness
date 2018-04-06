@@ -215,26 +215,6 @@
 
 
 	/**
-	* get the exact wording of the questions in this period's questionaire
-	* wording may change; order of the topics should remain the same
-	* @returns {object} fields with corresponding question
-	*/
-	// const getPeriodQuestionFields = function(questions) {
-	// 	const fields = {
-	// 		timestamp: questions[0],
-	// 		email: questions[1],
-	// 		name: questions[2],
-	// 		happiness: questions[3],
-	// 		business: questions[4],
-	// 		otherQuestion: questions[5]
-	// 	};
-
-	// 	return fields;
-	// };
-
-
-
-	/**
 	* get the object for the team average; create it if it doesn't exist yet
 	* @returns {object} object like employee-object
 	*/
@@ -301,9 +281,6 @@
 	* @returns {undefined}
 	*/
 	const processWeekData = function(weekData, weekIdx) {
-
-		//	hierin kwam vroeger 1 excel sheet
-		// const fields = getPeriodQuestionFields(dataset);
 		// map column numbers to vars
 		const fields = {
 			timestamp: 0,
@@ -321,7 +298,7 @@
 		// USE ONLY REMARK HERE NOW
 		const periodQuestion = {
 			// question: fields.otherQuestion,
-			question: 'remarks',
+			question: 'this week\'s remarks',
 			answers: []
 		};
 
@@ -414,25 +391,6 @@
 
 
 	/**
-	* process the data so we can use it
-	* @returns {undefined}
-	*/
-	// const processData = function(rawDatasetStrings) {
-	// 	totalPeriods = rawDatasetStrings.length;
-	// 	setWeek();
-
-	// 	const ssv = d3.dsvFormat(';');// define semicolon separated value parser
-
-	// 	// loop through all data
-	// 	rawDatasetStrings.forEach((datasetString, periodIdx) => {
-	// 		console.log(datasetString);
-	// 		const dataset = ssv.parse(datasetString);
-	// 		processPeriodData(dataset, periodIdx);
-	// 	});
-	// };
-
-
-	/**
 	* divide sheet data in array per week
 	* @returns {array}
 	*/
@@ -459,13 +417,11 @@
 	};
 	
 
-		/**
+	/**
 	* process the data so we can use it
 	* @returns {undefined}
 	*/
 	const processData = function(data) {
-		// console.log('sheetData:', data);
-
 		const weekDatasets = divideDataIntoWeeks(data);
 		// console.log('weekDatasets:', weekDatasets);
 		totalPeriods = weekDatasets.length;
@@ -475,8 +431,6 @@
 			processWeekData(weekData, weekIdx);
 		});
 	};
-
-	
 
 
 
@@ -549,6 +503,7 @@
 	};
 
 
+
 	/**
 	* show a new answer to this period's question
 	* @returns {undefined}
@@ -575,9 +530,7 @@
 		document.getElementById('period-question').textContent = questions.question;
 		showNewPeriodAnswer();
 	};
-	
 
-	
 
 
 	/**
@@ -659,42 +612,6 @@
 
 
 	/**
-	* 
-	* @returns {undefined}
-	*/
-	// const fileExists = function(url) {
-	//     var http = new XMLHttpRequest();
-	//     http.open('HEAD', url, false);
-	//     // this line will show an error in the console
-	//     // this is not a js-error, so we can't use try catch
-	//     http.send();
-	//     return http.status !== 404;
-	// };
-
-
-
-	/**
-	* create a list of files to load
-	* @returns {undefined}
-	*/
-	// const createFileList = function() {
-
-	// 	const urls = [];
-
-	// 	for (let weekNumber=1; weekNumber < 54; weekNumber++) {
-	// 		const urlToCheck = dataFileUrlStart + weekNumber + dataFileUrlEnd;
-
-	// 		if (fileExists(urlToCheck)) {
-	// 			urls.push(urlToCheck);
-	// 		}
-	// 	}
-		
-	// 	return urls;
-	// };
-
-
-
-	/**
 	* set the current week
 	* @returns {undefined}
 	*/
@@ -704,32 +621,6 @@
 	};
 	
 	
-
-	/**
-	* handle data being loaded
-	* @returns {undefined}
-	*/
-	// const loadHandler = function(error, ...rawDatasetStrings) {
-	// 	initInterface();
-	// 	processData(rawDatasetStrings);
-	// 	drawGraph();
-	// }// loadHandler
-	
-
-
-	/**
-	* load data and kick off rendering
-	* @returns {undefined}
-	*/
-	// const loadData_bak = function() {
-	// 	const urlsToLoad = createFileList();
-
-	// 	let queue = d3.queue();
-	// 	urlsToLoad.forEach((url) => {
-	// 		queue = queue.defer(d3.text, url);
-	// 	});
-	// 	queue.await(loadHandler);
-	// };
 
 	//-- Start helper functions
 
@@ -824,12 +715,9 @@
 
 	/**
 	* initialize all functionality
-	* @param {string} varname - Description
 	* @returns {undefined}
 	*/
 	const init = function() {
-		// loadData();// load data and kick things off
-		
 		document.body.addEventListener('googlesheethelperenabled', readData);
 		getSheetHelper();
 	};

@@ -17,8 +17,14 @@ window.createGoogleSheetsHelper = function(options) {
 		// included, separated by spaces.
 		const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
 
-		const authorizeButton = document.getElementById('authorize-button');
-		const signoutButton = document.getElementById('signout-button');
+		const authorizeContainer = document.getElementById('gsh-authorize-container');
+		const signoutContainer = document.getElementById('gsh-signout-container');
+		const authorizeButton = document.getElementById('gsh-authorize-button');
+		const signoutButton = document.getElementById('gsh-signout-button');
+
+		// define element to show/hide
+		const authorizeElm = authorizeContainer || authorizeButton;
+		const signoutElm = signoutContainer || signoutButton;
 
 		/**
 		 *  On load, called to load the auth2 library and API client library.
@@ -54,13 +60,14 @@ window.createGoogleSheetsHelper = function(options) {
 		 */
 		function updateSigninStatus(isSignedIn) {
 			if (isSignedIn) {
-				authorizeButton.style.display = 'none';
-				signoutButton.style.display = 'block';
+				console.log('signed in', authorizeElm, signoutElm);
+				authorizeElm.style.display = 'none';
+				signoutElm.style.display = 'block';
 				
 				document.body.dispatchEvent(new CustomEvent('googlesheethelperenabled'));
 			} else {
-				authorizeButton.style.display = 'block';
-				signoutButton.style.display = 'none';
+				authorizeElm.style.display = 'block';
+				signoutElm.style.display = 'none';
 				document.body.dispatchEvent(new CustomEvent('googlesheethelperdisabled'));
 			}
 		}

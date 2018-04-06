@@ -11,11 +11,18 @@
 	<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+	<div id="gsh-authorize-container" class="gsh-authorize-container">
+		<div class="gsh-authorize-box">
+			<p>
+				Please give access to to the Google Sheet by authorizing with your gmail account
+			</p>
+			<button id="gsh-authorize-button" class="gsh-authorize-button">Grant access to sheet</button>
+		</div>
+	</div>
 	<div class="o-content-width">
-	
+
 		<div class="options">
-			<button id="authorize-button" style="display: none;">Authorize</button>
-			<button id="signout-button" style="display: none;">Sign Out</button>
+			<button id="gsh-signout-button" class="gsh-signout-button">Sign Out</button>
 
 			<div class="week-number" id="week-number">
 				<h2 class="h3">our happiness of week</h2>
