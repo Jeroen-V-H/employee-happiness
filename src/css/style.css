@@ -193,8 +193,13 @@ button[disabled] {
 }
 
 .employee-node.not-from-this-week {
-	opacity: 0.4;
 	transform: translate(-50%, -50%) scale(0.75);
+
+	border: 2px solid currentColor;
+	background: rgba(255, 255, 255, 0.5) !important;/* overrule background color set by js - we do want that bg color on nodes that are from this week */
+}
+.employee-node.not-from-this-week::after {
+	color: inherit;
 }
 
 .employee-node::after {
