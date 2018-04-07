@@ -60,7 +60,6 @@ window.createGoogleSheetsHelper = function(options) {
 		 */
 		function updateSigninStatus(isSignedIn) {
 			if (isSignedIn) {
-				console.log('signed in', authorizeElm, signoutElm);
 				authorizeElm.style.display = 'none';
 				signoutElm.style.display = 'block';
 				

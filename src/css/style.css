@@ -208,24 +208,6 @@ button[disabled] {
 	transform: translate(-50%, -50%);
 }
 
-.employee-node[data-business="1"]::before {
-	/*content: 'zzz';
-	color: #666;
-	width: 3em;
-	height: 2em;
-	border-radius: 50%;
-	border: 1px solid;
-	background: white;*/
-}
-
-/*.employee-node::before {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	text-align: center;
-	content: attr(data-health-score);
-	transform: translate(-50%, 0%);
-}*/
 
 .mood-trace {
 	position: absolute;
@@ -233,23 +215,15 @@ button[disabled] {
 	left: 50%;
 	width: 0;
 	border: calc(var(--node-radius) - 4px) solid transparent;
-	border-left: 0px solid transparent;
+	border-left: 0px solid currentColor;
 	border-right: none;
 	height: 8px;/* 2× the 4px in border calc */
 	border-radius: 0 50% 50% 0;
-	opacity: 0.1;
+	opacity: 0.2;
 	background: transparent;
-	color: inherit;
 	transform-origin: center left;
-	transform: translate(0, -50%);
-	transition: border 0.3s;
 }
 
-.mood-trace--is-visible {
-	/*background: inherit;*/
-	border-left-color: currentColor;
-	transition-duration: 0.3s;
-}
 
 /* indicators on axes */
 .indicator {

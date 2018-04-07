@@ -182,8 +182,7 @@
 		currWeekNumber = weekDatasets[currPeriodIdx].weekNr;
 
 		graphElm.querySelectorAll('.mood-trace').forEach((traceElm) => {
-			traceElm.classList.remove('mood-trace--is-visible');
-			traceElm.style.borderLeftWidth = 0;
+			graphElm.removeChild(traceElm);
 		});
 
 		if (currPeriodIdx === 0) {
@@ -472,13 +471,16 @@
 					currMood = data.periods[currPeriodIdx];
 
 				if (currMood.isFromThisWeek) {
-					const traceElm = elm.querySelector('.mood-trace'),
-						prevMood = data.periods[prevPeriodIdx];
+					const prevMood = data.periods[prevPeriodIdx];
 
 					// if happiness or business has changed, show trace
 					if (prevMood.happiness !== currMood.happiness || prevMood.business !== currMood.business) {
 
-						traceElm.classList.add('mood-trace--is-visible');
+						// add moodtrace element
+						const traceElm = document.createElement('div');
+						traceElm.classList.add('mood-trace');
+
+						//
 						const currLeft = parseInt(elm.style.left, 10),
 							currTop = parseInt(elm.style.top, 10),
 							prevLeft = happinessScale(prevMood.happiness),
@@ -493,9 +495,16 @@
 							alpha += 180;
 						}
 
-						// traceElm.style.width = length + 'px';
-						traceElm.style.borderLeftWidth = length + 'px';
-						traceElm.style.transform = 'translate(0, -50%) rotate('+alpha+'deg)';
+						const changedStyle = {
+							left: currLeft + 'px',
+							top: currTop + 'px',
+							color: elm.style.color,
+							borderLeftWidth: length + 'px',
+							transform: 'translate(0, -50%) rotate('+alpha+'deg)'// use this with height
+						};
+						Object.assign(traceElm.style, changedStyle);
+
+						graphElm.appendChild(traceElm);
 					}
 				}
 			});
@@ -579,12 +588,6 @@
 			.on('tick', () => { tickHandler(employeeNodes) });
 		scheduleSimulationStop();
 		setTimeout(() => {changePeriod(+1);}, 1000);
-
-		graphElm.querySelectorAll('.employee-node').forEach((elm) => {
-			let div = document.createElement('div');
-			div.classList.add('mood-trace');
-			elm.append(div);
-		});
 	};
 	
 
