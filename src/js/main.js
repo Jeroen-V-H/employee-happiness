@@ -227,7 +227,8 @@
 				email: '',
 				name: 'Team Average',
 				initials: 'AVG',
-				periods: []
+				periods: [],
+				isAVGObject: true
 			};
 			employees.push(avgObj);
 			employeeEmails.push(avgString);
@@ -271,6 +272,38 @@
 			}
 		});
 	};
+
+	/**
+	* 
+	* @returns {undefined}
+	*/
+	const calculateWeekAverageMood = function(weekData, teamHappiness, teamBusiness, teamHealth) {
+		const avgObj = getAverageObject(),
+			numEntries = weekData.data.length;
+		let mood;
+
+		if (numEntries > 0) {
+			mood = {
+				happiness: (teamHappiness/numEntries).toFixed(1),
+				business: (teamBusiness/numEntries).toFixed(1),
+				health: (teamHealth/numEntries).toFixed(1),
+				isFromThisWeek: true
+			};
+		} else {
+			mood = {
+				happiness: 3,
+				business: 3,
+				health: 0,
+			};
+		}
+
+		// we don't want avarage object to change color
+		// health colors are an integer, and that integer is used as index on color array
+		// by adding 0.01, avg health will never match an item in the color array
+		mood.health += 0.01;
+		avgObj.periods.push(mood);
+	};
+	
 	
 
 	/**
@@ -362,26 +395,7 @@
 
 		periodQuestions.push(periodQuestion);
 
-		const avgObj = getAverageObject(),
-			numEntries = weekData.length;
-		let mood;
-
-		if (numEntries > 0) {
-			mood = {
-				happiness: (teamHappiness/numEntries).toFixed(1),
-				business: (teamBusiness/numEntries).toFixed(1),
-				health: (teamHealth/numEntries).toFixed(1),
-				isFromThisWeek: true
-			};
-		} else {
-			mood = {
-				happiness: 3,
-				business: 3,
-				health: 0.1,// fraction makes it fail at detecting color - what we want :)
-				isFromThisWeek: true
-			};
-		}
-		avgObj.periods.push(mood);
+		calculateWeekAverageMood(weekData, teamHappiness, teamBusiness, teamHealth);
 
 		// add moods for employees that were in previous periods, but not in this one
 		addMissingEmployeeMoods(weekData, weekIdx);
