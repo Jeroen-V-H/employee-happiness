@@ -580,8 +580,15 @@
 	* @returns {undefined}
 	*/
 	const showPeriodAnswers = function() {
-		const answerBox = document.getElementById('period-answer'),
-			questions = periodQuestions[currPeriodIdx];
+		const answerBox = document.getElementById('period-remarks-box'),
+			questions = periodQuestions[currPeriodIdx],
+			activeClass = 'period-remarks-box--is-visible';
+
+		if (questions.answers.length) {
+			answerBox.classList.add(activeClass);
+		} else {
+			answerBox.classList.remove(activeClass);
+		}
 			
 		document.getElementById('period-question').textContent = questions.question;
 		showNewPeriodAnswer();
@@ -645,10 +652,6 @@
 	*/
 	const initInterface = function() {
 		// initButtons
-		d3.select('#show-mood').on('click', function() {
-			changeWeek();
-		});
-
 		d3.select('#show-next-period').on('click', function() {
 			changeWeek(+1);
 		});

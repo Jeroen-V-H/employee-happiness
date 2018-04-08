@@ -35,15 +35,16 @@ h3 {
 }
 
 h1, .h1 {
-	font-size: 3.2rem;
-}
-
-h2, .h2 {
+	margin-bottom: 0;
 	font-size: 2.4rem;
 }
 
-h3, .h3 {
+h2, .h2 {
 	font-size: 2.0rem;
+}
+
+h3, .h3 {
+	font-size: 1.6rem;
 	font-weight: normal;
 }
 
@@ -104,16 +105,6 @@ button {
 
 /*-- End google sheet helper --*/
 
-.prev-period {
-	border-left: 0;
-	border-right: 1em solid currentColor;
-}
-
-.next-period {
-	border-right: 0;
-	border-left: 1em solid currentColor;
-}
-
 button[disabled] {
 	color: #ccc;
 	cursor: default;
@@ -121,20 +112,26 @@ button[disabled] {
 
 .options {
 	float: right;
-	margin-right: 1em;
+	margin-right: 2em;
+	width: 20em;
 	text-align: center;
 }
 
 /*-- Start week display --*/
 
-	.week-number {
+	/* .week-number {
 		color: #666;
 		text-align: center;
 		text-transform: uppercase;
+	} */
+
+	.when {
+		/* color: #ccc; */
 	}
 
 	.week-number__value {
 		display: inline-block;
+		display: none;
 		margin: 0 0.5em;
 		width: 1em;
 		color: #00bdfa;
@@ -142,6 +139,7 @@ button[disabled] {
 	}
 	
 	.first-day__name {
+		display: none;
 		color: #ccc;
 	}
 	
@@ -155,14 +153,43 @@ button[disabled] {
 		font-weight: bold;
 	}
 
+	.divider {
+		display: inline-block;
+		margin: 0 0.5em;
+		color: #ccc;
+	}
+
 /*-- End week display --*/
 
 
-.period-question-box {
-	width: 20em;
+.period-remarks-box {
+	display: none;
+	position: relative;
+	margin-top: 3em;
 	text-align: left;
 }
 
+.period-remarks-box--is-visible {
+	display: block;
+}
+
+.period-answer::before,
+.period-answer::after {
+	display: block;
+	content: '“';
+	position: absolute;
+	left: -0.4em;
+	top: 0.4em;
+	font-size: 3em;
+	color: #ccc;
+}
+.period-answer::after {
+	content: '”';
+	top: auto;
+	left: auto;
+	right: -0.3em;
+	bottom: -0.7em;
+}
 
 .canvas {
 	position: relative;

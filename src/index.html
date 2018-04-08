@@ -24,20 +24,27 @@
 		<div class="options">
 			<button id="gsh-signout-button" class="gsh-signout-button">Sign Out</button>
 
-			<div class="week-number" id="week-number">
-				<h2 class="h3">our happiness for the week of</h2>
-				<button id="show-prev-period" class="prev-period" disabled></button>
-				<h2 id="week-number__value" class="week-number__value">&hellip;</h1>
-				<button id="show-next-period" class="next-period" disabled></button>
-			</div>
-			
-			<div id="first-day" class="first-day">
-				<span id="first-day__name" class="first-day__name"></span>
-				<br><span id="first-day__date" class="first-day__date"></span> <span id="first-day__month" class="first-day__month"></span>
-			</div>
-			<br>
+			<div class="">
 
-			<div class="period-question-box">
+				<h1>How happy we <span id="heading-verb">are</span></h1>
+				<p class="when">In the week starting on</p>
+
+				
+				<div id="first-day" class="first-day">
+					<span id="first-day__name" class="first-day__name"></span>
+					<span id="first-day__date" class="first-day__date">&hellip;</span> <span id="first-day__month" class="first-day__month">&hellip;</span>
+				</div>
+				<h2 id="week-number__value" class="week-number__value">&hellip;</h1>
+
+				<button id="show-prev-period" class="prev-period" disabled>
+					<!-- <span class="arrow arrow--prev"></span> -->
+					&laquo; prev week
+				</button><span class="divider">|</span><button id="show-next-period" class="next-period" disabled>
+					next week &raquo;
+				</button>
+			</div>
+
+			<div id="period-remarks-box" class="period-remarks-box">
 				<h2 class="h3" id="period-question" class="period-question"></h2>
 				<p id="period-answer" class="period-answer"></p>
 			</div>			
