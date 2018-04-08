@@ -168,7 +168,7 @@
 	* 
 	* @returns {undefined}
 	*/
-	const changePeriod = function(increment = 0) {
+	const changeWeek = function(increment = 0) {
 		const newPeriodIdx = currPeriodIdx + increment;
 		if (newPeriodIdx >= 0 && newPeriodIdx < totalPeriods) {
 			prevPeriodIdx = currPeriodIdx;
@@ -181,25 +181,16 @@
 		prevPeriodIdx = Math.max(0, prevPeriodIdx);
 		currWeekNumber = weekDatasets[currPeriodIdx].weekNr;
 
-		graphElm.querySelectorAll('.mood-trace').forEach((traceElm) => {
-			graphElm.removeChild(traceElm);
-		});
-
-		if (currPeriodIdx === 0) {
-			document.getElementById('show-prev-period').setAttribute('disabled', 'disabled');
-		} else {
-			document.getElementById('show-prev-period').removeAttribute('disabled');
-		}
-
-		if (currPeriodIdx === totalPeriods-1) {
-			document.getElementById('show-next-period').setAttribute('disabled', 'disabled');
-		} else {
-			document.getElementById('show-next-period').removeAttribute('disabled');
-		}
 
 		setHealthColors();
 		setRecentness();
 		showPeriodAnswers();
+		updateWeekDisplay();
+
+		// remove mood traces
+		graphElm.querySelectorAll('.mood-trace').forEach((traceElm) => {
+			graphElm.removeChild(traceElm);
+		});
 
 		simulation
 			.force('forceX', forceXHappiness)
@@ -207,9 +198,37 @@
 			.alphaTarget(0.5)
 			.restart();
 		scheduleSimulationStop();
+	};
 
+	/**
+	* update current week display
+	* @returns {undefined}
+	*/
+	const updateWeekDisplay = function() {
+		const prevElm = document.getElementById('show-prev-period');
+		const nextElm = document.getElementById('show-next-period');
+		if (currPeriodIdx === 0) {
+			prevElm.setAttribute('disabled', 'disabled');
+		} else {
+			prevElm.removeAttribute('disabled');
+		}
+
+		if (currPeriodIdx === totalPeriods-1) {
+			nextElm.setAttribute('disabled', 'disabled');
+		} else {
+			nextElm.removeAttribute('disabled');
+		}
+
+		const fdow = weekDatasets[currPeriodIdx].firstDayOfWeek,
+			day = fdow.toLocaleString('en-us', { weekday: 'long'}),
+			month = fdow.toLocaleString('en-us', { month: 'long'});
+
+		document.getElementById('first-day__name').textContent = day;
+		document.getElementById('first-day__date').textContent = fdow.getDate();
+		document.getElementById('first-day__month').textContent = month;
 		document.getElementById('week-number__value').textContent = currWeekNumber;
 	};
+	
 	
 
 
@@ -273,6 +292,8 @@
 		});
 	};
 
+
+	
 	/**
 	* 
 	* @returns {undefined}
@@ -304,6 +325,24 @@
 		avgObj.periods.push(mood);
 	};
 	
+
+	/**
+	* get mapping from questions to sheet columns
+	* @returns {undefined}
+	*/
+	const getFieldMapping = function() {
+		const fields = {
+			timestamp: 0,
+			email: 1,
+			name: 2,
+			happiness: 3,
+			business: 4,
+			otherQuestion: 5
+		};
+
+		return fields;
+	};
+	
 	
 
 	/**
@@ -314,14 +353,7 @@
 	*/
 	const processWeekData = function(weekData, weekIdx) {
 		// map column numbers to vars
-		const fields = {
-			timestamp: 0,
-			email: 1,
-			name: 2,
-			happiness: 3,
-			business: 4,
-			otherQuestion: 5
-		};
+		const fields = getFieldMapping();
 
 		let teamHappiness = 0,
 			teamBusiness = 0,
@@ -330,7 +362,7 @@
 		// USE ONLY REMARK HERE NOW
 		const periodQuestion = {
 			// question: fields.otherQuestion,
-			question: 'this week\'s remarks',
+			question: 'this week\'s remarks:',
 			answers: []
 		};
 
@@ -412,12 +444,13 @@
 			weekData;
 
 		data.forEach((row) => {
-			const weekNr = getRowWeekNumber(row);
+			const { weekNr, firstDayOfWeek } = getRowWeekDateInfo(row);
 
 			if (!lastWeekNr || weekNr !== lastWeekNr) {
 				// first row for this week
 				weekData = {
 					weekNr,
+					firstDayOfWeek,
 					data: []
 				};
 				weekDatasets.push(weekData);
@@ -601,7 +634,7 @@
 		simulation.nodes(employees)
 			.on('tick', () => { tickHandler(employeeNodes) });
 		scheduleSimulationStop();
-		setTimeout(() => {changePeriod(+1);}, 1000);
+		setTimeout(() => {changeWeek(+1);}, 1000);
 	};
 	
 
@@ -613,15 +646,15 @@
 	const initInterface = function() {
 		// initButtons
 		d3.select('#show-mood').on('click', function() {
-			changePeriod();
+			changeWeek();
 		});
 
 		d3.select('#show-next-period').on('click', function() {
-			changePeriod(+1);
+			changeWeek(+1);
 		});
 
 		d3.select('#show-prev-period').on('click', function() {
-			changePeriod(-1);
+			changeWeek(-1);
 		});
 
 	};
@@ -633,7 +666,7 @@
 	* @returns {undefined}
 	*/
 	const setWeek = function() {
-		currPeriodIdx = totalPeriods - 2;// we'll call changePeriod(+1) 1sec in the script
+		currPeriodIdx = totalPeriods - 2;// we'll call changeWeek(+1) 1sec in the script
 		prevPeriodIdx = Math.max(currPeriodIdx -1, 0);
 	};
 	
@@ -661,12 +694,13 @@
 			return [d.getUTCFullYear(), weekNo];
 		}
 
+
 		/**
 		* get the week number for an entry in the sheet
 		* @param {array} row - A row in the sheet
 		* @returns {number}
 		*/
-		const getRowWeekNumber = function(row) {
+		const getRowWeekDateInfo = function(row) {
 			// date info in sheet has format dd/mm/yyyy hh:mm:ss
 			// don't rely on Date to parse that correctly
 			const tmStr = row[0],
@@ -674,10 +708,34 @@
 				month = parseInt(tmStr.substr(3, 2), 10) -1,
 				year = parseInt(tmStr.substr(6, 4), 10),
 				tm = new Date(year, month, day),
-				weekNr = getWeekNumber(tm)[1];
+				weekNr = getWeekNumber(tm)[1],
+				firstDayOfWeek = getDateOfISOWeek(weekNr, year);
 
-			return weekNr;
+			return {
+				weekNr,
+				firstDayOfWeek
+			};
 		};
+
+
+		/**
+		* get 1st day of week by week number
+		* https://stackoverflow.com/questions/16590500/javascript-calculate-date-from-week-number
+		* @returns {Date}
+		* @param {number} weekNr - the week number
+		* @param {number} year
+		*/
+		function getDateOfISOWeek(weekNr, year) {
+			var simple = new Date(year, 0, 1 + (weekNr - 1) * 7);
+			var dayOfWeek = simple.getDay();
+			var ISOweekStart = simple;
+			if (dayOfWeek <= 4) {
+				ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+			} else {
+				ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+			}
+			return ISOweekStart;
+		}
 		
 
 	//-- End helper functions

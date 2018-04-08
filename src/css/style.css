@@ -125,20 +125,37 @@ button[disabled] {
 	text-align: center;
 }
 
-.week-number {
-	color: #666;
-	text-align: center;
-	text-transform: uppercase;
-}
+/*-- Start week display --*/
 
-.week-number__value {
-	display: inline-block;
-	margin: 0 0.5em;
-	width: 1em;
-	color: #00bdfa;
-	font-size: 3.2rem;
-	vertical-align: middle;
-}
+	.week-number {
+		color: #666;
+		text-align: center;
+		text-transform: uppercase;
+	}
+
+	.week-number__value {
+		display: inline-block;
+		margin: 0 0.5em;
+		width: 1em;
+		color: #00bdfa;
+		vertical-align: middle;
+	}
+	
+	.first-day__name {
+		color: #ccc;
+	}
+	
+	.first-day__date,
+	.first-day__month {
+		color: #00bdfa;
+		font-size: 3.2rem;
+	}
+
+	.first-day__date {
+		font-weight: bold;
+	}
+
+/*-- End week display --*/
 
 
 .period-question-box {
