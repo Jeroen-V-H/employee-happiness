@@ -5,46 +5,46 @@
 	/* globals zup */ //Tell jshint zup exists as global var
 
 
-	const graphElm = document.getElementById('graph'),
-		width = graphElm.clientWidth,
-		height = graphElm.clientHeight,
-		forceStrength = 0.1,
-		simulationDuration = 2000;
+	const graphElm = document.getElementById('graph');
+	const width = graphElm.clientWidth;
+	const height = graphElm.clientHeight;
+	const forceStrength = 0.1;
+	const simulationDuration = 2000;
 
 	// const dataFolder = 'data/team-dotnet/',
-	const dataFolder = 'data/team-amersforce/',
-		dataFileUrlStart = dataFolder + 'Weekly happiness form ',
-		dataFileUrlEnd = ' (Responses).csv';
+	const dataFolder = 'data/team-amersforce/';
+	const dataFileUrlStart = dataFolder + 'Weekly happiness form ';
+	const dataFileUrlEnd = ' (Responses).csv';
 	
-	let employeeEmails = [],// will contain all employees' email (without tld)
-		employees = [],
-		selectedEmployees = [],
-		weekDatasets = [],
-		periodQuestions = [],
+	let employeeEmails = [];// will contain all employees' email (without tld)
+	let employees = [];
+	let selectedEmployees = [];
+	let weekDatasets = [];
+	let periodQuestions = [],
 		periodAnswerTimer,
-		currWeekNumber,
-		currPeriodIdx = -1,
-		prevPeriodIdx = 0,
-		totalPeriods = 0;
+		currWeekNumber;
+	let currPeriodIdx = -1;
+	let prevPeriodIdx = 0;
+	let totalPeriods = 0;
 
 	let sheetHelper;
 
 	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
 	// https://gka.github.io/palettes/#colors=#c00,#fc0|steps=4|bez=1|coL=1
-	const colors = ['#cc0000','#cc0000','#cc0000','#e06000','#f19800','#ffcc00','#b9b400','#709b00','#008000'],
-		happinessScores = [-4, -2, 0, 1, 2],
-		businessScores = [-2, -1, 0, -1, -2],
-		minHappinessScore = Math.min(...happinessScores),
-		maxHappinessScore = Math.max(...happinessScores),
-		minBusinessScore = Math.min(...businessScores),
-		maxBusinessScore = Math.max(...businessScores),
-		minHealthScore = minHappinessScore + minBusinessScore,
-		maxHealthScore = maxHappinessScore + maxBusinessScore,
-		happinessScale = d3.scaleLinear().domain([1, 5]).range([0, width]),
-		businessScale = d3.scaleLinear().domain([1, 5]).range([height, 0]);
+	const colors = ['#cc0000','#cc0000','#cc0000','#e06000','#f19800','#ffcc00','#b9b400','#709b00','#008000'];
+	const happinessScores = [-4, -2, 0, 1, 2];
+	const businessScores = [-2, -1, 0, -1, -2];
+	const minHappinessScore = Math.min(...happinessScores);
+	const maxHappinessScore = Math.max(...happinessScores);
+	const minBusinessScore = Math.min(...businessScores);
+	const maxBusinessScore = Math.max(...businessScores);
+	const minHealthScore = minHappinessScore + minBusinessScore;
+	const maxHealthScore = maxHappinessScore + maxBusinessScore;
+	const happinessScale = d3.scaleLinear().domain([1, 5]).range([0, width]);
+	const businessScale = d3.scaleLinear().domain([1, 5]).range([height, 0]);
 
-	const groupNameAll = 'all',
-		groups = [
+	const groupNameAll = 'all';
+	const groups = [
 			{
 				name: groupNameAll
 			},
@@ -69,17 +69,17 @@
 					'stefan.kuiper@valtech.nl'
 				]
 			}
-		],
-		formerEmployeeEmails = [
+		];
+	const formerEmployeeEmails = [
 			'hylco.douwes@valtech.nl',
 			'john.beitler@valtech.nl'
 		];
 
 	let simulationTimer,
 		employeeNodes,
-		prevMoodNodes,
-		nodeRadius = 25,// will be calculated by js
-		nodeDistance = 3;
+		prevMoodNodes;
+	let nodeRadius = 25;// will be calculated by js
+	let nodeDistance = 3;
 
 	let graph = d3.select('#graph')
 			.attr('width', width)
@@ -94,8 +94,8 @@
 		return businessScale(d.periods[currPeriodIdx].business);
 	}).strength(forceStrength);
 
-	const forceXCombined = d3.forceX(width / 2).strength(forceStrength),
-		forceYCombined = d3.forceY(height / 2).strength(forceStrength);
+	const forceXCombined = d3.forceX(width / 2).strength(forceStrength);
+	const forceYCombined = d3.forceY(height / 2).strength(forceStrength);
 
 	const forceCollide = d3.forceCollide(function(d) {
 			return nodeRadius + nodeDistance;
@@ -114,8 +114,8 @@
 	* @returns {string} the stripped email
 	*/
 	const getEmailWithoutTld = function(email) {
-		const regex = /(.+)@([^\.]+)/,
-			matches = email.match(regex);
+		const regex = /(.+)@([^\.]+)/;
+		const matches = email.match(regex);
 
 		if (matches) {
 			email = matches[1] + '@' + matches[2];
@@ -129,8 +129,8 @@
 	* @returns {undefined}
 	*/
 	const getInitials = function(email) {
-		const parts = email.split('@')[0].split('.'),
-			nonCaps = [
+		const parts = email.split('@')[0].split('.');
+		const nonCaps = [
 				'de', 'den', 'der', 'van', 'op', 't', 'vande', 'vanden', 'vander', 'opt'
 			];
 		let initials = '';
@@ -153,9 +153,9 @@
 	* @returns {undefined}
 	*/
 	const calculateHealthScore = function(happiness, business) {
-		const happinessScore = happinessScores[happiness -1],
-			businessScore = businessScores[business -1],
-			healthScore = happinessScore + businessScore;
+		const happinessScore = happinessScores[happiness -1];
+		const businessScore = businessScores[business -1];
+		const healthScore = happinessScore + businessScore;
 
 		return healthScore;
 	};
@@ -252,9 +252,9 @@
 			nextElm.removeAttribute('disabled');
 		}
 
-		const fdow = weekDatasets[currPeriodIdx].firstDayOfWeek,
-			day = fdow.toLocaleString('en-us', { weekday: 'long'}),
-			month = fdow.toLocaleString('en-us', { month: 'long'});
+		const fdow = weekDatasets[currPeriodIdx].firstDayOfWeek;
+		const day = fdow.toLocaleString('en-us', { weekday: 'long'});
+		const month = fdow.toLocaleString('en-us', { month: 'long'});
 
 		document.getElementById('first-day__name').textContent = day;
 		document.getElementById('first-day__date').textContent = fdow.getDate();
@@ -271,8 +271,8 @@
 	*/
 	const getAverageObject = function() {
 		const avgString = 'team-average';
-		let avgObj,
-			avgIndex = employeeEmails.indexOf(avgString);
+		let avgObj;
+		let avgIndex = employeeEmails.indexOf(avgString);
 
 		if (avgIndex === -1) {
 			avgObj = {
@@ -312,8 +312,8 @@
 	*/
 	const addMissingEmployeeMoods = function(dataset, weekIdx) {
 		employees.forEach((employee) => {
-			const periods = employee.periods,
-				periodCount = periods.length;
+			const periods = employee.periods;
+			const periodCount = periods.length;
 
 			if (periodCount <= weekIdx) {
 				// we're missing periods; take the last known mood as reference
@@ -332,8 +332,8 @@
 	* @returns {undefined}
 	*/
 	const calculateWeekAverageMood = function(weekData, teamHappiness, teamBusiness, teamHealth) {
-		const avgObj = getAverageObject(),
-			numEntries = weekData.data.length;
+		const avgObj = getAverageObject();
+		const numEntries = weekData.data.length;
 		let mood;
 
 		if (numEntries > 0) {
@@ -388,9 +388,9 @@
 		// map column numbers to vars
 		const fields = getFieldMapping();
 
-		let teamHappiness = 0,
-			teamBusiness = 0,
-			teamHealth = 0;
+		let teamHappiness = 0;
+		let teamBusiness = 0;
+		let teamHealth = 0;
 
 		// USE ONLY REMARK HERE NOW
 		const periodQuestion = {
@@ -402,10 +402,10 @@
 		let rowCounter = 0;
 		weekData.data.forEach((employeeRow) => {
 			rowCounter++;
-			const email = employeeRow[fields.email].toLowerCase(),
-				emailWithoutTld = getEmailWithoutTld(email);
-			let employee,
-				isNewlyAdded = false;
+			const email = employeeRow[fields.email].toLowerCase();
+			const emailWithoutTld = getEmailWithoutTld(email);
+			let employee;
+			let isNewlyAdded = false;
 
 			//check if employee is already in employees-array
 			// d3 works easier with normal arrays than with associative ones, so I can't use email as array-index
@@ -427,11 +427,11 @@
 			// now do stuff for both just and previously added employees
 			employee = employees[employeeIndex];
 
-			const happiness = +employeeRow[fields.happiness],
-				business = +employeeRow[fields.business],
-				health = calculateHealthScore(happiness, business),
-				answer = employeeRow[fields.otherQuestion],
-				mood = {
+			const happiness = +employeeRow[fields.happiness];
+			const business = +employeeRow[fields.business];
+			const health = calculateHealthScore(happiness, business);
+			const answer = employeeRow[fields.otherQuestion];
+			const mood = {
 					happiness,
 					business,
 					health,
@@ -473,8 +473,8 @@
 	* @returns {array}
 	*/
 	const divideDataIntoWeeks = function(data) {
-		let lastWeekNr,
-			weekData;
+		let lastWeekNr;
+		let weekData;
 
 		data.forEach((row) => {
 			const { weekNr, firstDayOfWeek } = getRowWeekDateInfo(row);
@@ -565,8 +565,8 @@
 	const showMoodTrace = function() {
 		if (currPeriodIdx >= 0 && currPeriodIdx !== prevPeriodIdx) {
 			graphElm.querySelectorAll('.employee-node').forEach((elm, i) => {
-				const data = elm.__data__,
-					currMood = data.periods[currPeriodIdx];
+				const data = elm.__data__;
+				const currMood = data.periods[currPeriodIdx];
 
 				if (currMood.isFromThisWeek) {
 					const prevMood = data.periods[prevPeriodIdx];
@@ -579,14 +579,14 @@
 						traceElm.classList.add('mood-trace');
 
 						//
-						const currLeft = parseInt(elm.style.left, 10),
-							currTop = parseInt(elm.style.top, 10),
-							prevLeft = happinessScale(prevMood.happiness),
-							prevTop = businessScale(prevMood.business),
-							dx = prevLeft - currLeft,// distance from curr to prev
-							dy = prevTop - currTop,
-							length = Math.sqrt(dx*dx + dy*dy),
-							alphaRadians = Math.atan(dy/dx);
+						const currLeft = parseInt(elm.style.left, 10);
+						const currTop = parseInt(elm.style.top, 10);
+						const prevLeft = happinessScale(prevMood.happiness);
+						const prevTop = businessScale(prevMood.business);
+						const dx = prevLeft - currLeft;// distance from curr to prev
+						const dy = prevTop - currTop;
+						const length = Math.sqrt(dx*dx + dy*dy);
+						const alphaRadians = Math.atan(dy/dx);
 
 						let alpha = alphaRadians * 180/Math.PI;
 						if (dx < 0) {
@@ -617,8 +617,8 @@
 	*/
 	const showNewPeriodAnswer = function() {
 		clearTimeout(periodAnswerTimer);
-		const answers = periodQuestions[currPeriodIdx].answers,
-			answer = answers[Math.floor(answers.length*Math.random())];
+		const answers = periodQuestions[currPeriodIdx].answers;
+		const answer = answers[Math.floor(answers.length*Math.random())];
 
 		document.getElementById('period-answer').textContent = answer;
 		periodAnswerTimer = setTimeout(showNewPeriodAnswer, 8000);
@@ -631,9 +631,9 @@
 	* @returns {undefined}
 	*/
 	const showPeriodAnswers = function() {
-		const answerBox = document.getElementById('period-remarks-box'),
-			questions = periodQuestions[currPeriodIdx],
-			activeClass = 'period-remarks-box--is-visible';
+		const answerBox = document.getElementById('period-remarks-box');
+		const questions = periodQuestions[currPeriodIdx];
+		const activeClass = 'period-remarks-box--is-visible';
 
 		if (questions.answers.length) {
 			answerBox.classList.add(activeClass);
@@ -688,7 +688,8 @@
 
 		// now that we have nodes on screen, we can check their dimensions
 		let typicalNode = graph.select('.employee-node:first-child').node();
-		nodeRadius = typicalNode.getBoundingClientRect().width/2,
+
+		nodeRadius = typicalNode.getBoundingClientRect().width/2;
 		nodeDistance = nodeRadius * 0.05;
 
 		simulation.nodes(selectedEmployees)
@@ -759,13 +760,13 @@
 		const getRowWeekDateInfo = function(row) {
 			// date info in sheet has format dd/mm/yyyy hh:mm:ss
 			// don't rely on Date to parse that correctly
-			const tmStr = row[0],
-				day = parseInt(tmStr.substr(0, 2), 10),
-				month = parseInt(tmStr.substr(3, 2), 10) -1,
-				year = parseInt(tmStr.substr(6, 4), 10),
-				tm = new Date(year, month, day),
-				weekNr = getWeekNumber(tm)[1],
-				firstDayOfWeek = getDateOfISOWeek(weekNr, year);
+			const tmStr = row[0];
+			const day = parseInt(tmStr.substr(0, 2), 10);
+			const month = parseInt(tmStr.substr(3, 2), 10) -1;
+			const year = parseInt(tmStr.substr(6, 4), 10);
+			const tm = new Date(year, month, day);
+			const weekNr = getWeekNumber(tm)[1];
+			const firstDayOfWeek = getDateOfISOWeek(weekNr, year);
 
 			return {
 				weekNr,
@@ -805,9 +806,9 @@
 		* @returns {undefined}
 		*/
 		const readData = function() {
-			const sheetTabName = 'Team happiness responses',
-				cellRange = 'A2:G',// all columns, skip 1st row with titles
-				range = "'" + sheetTabName + "'!" + cellRange;// range in a1 notation https://developers.google.com/sheets/api/guides/concepts#a1_notation
+			const sheetTabName = 'Team happiness responses';
+			const cellRange = 'A2:G';// all columns, skip 1st row with titles
+			const range = "'" + sheetTabName + "'!" + cellRange;// range in a1 notation https://developers.google.com/sheets/api/guides/concepts#a1_notation
 
 			const options = {
 				spreadsheetId: '1K4YbGsCSSIJhB0nYArs0XouoOqT1xGyM2KWOdny-tLs',
