@@ -18,6 +18,7 @@
 	
 	let employeeEmails = [],// will contain all employees' email (without tld)
 		employees = [],
+		selectedEmployees = [],
 		weekDatasets = [],
 		periodQuestions = [],
 		periodAnswerTimer,
@@ -41,6 +42,38 @@
 		maxHealthScore = maxHappinessScore + maxBusinessScore,
 		happinessScale = d3.scaleLinear().domain([1, 5]).range([0, width]),
 		businessScale = d3.scaleLinear().domain([1, 5]).range([height, 0]);
+
+	const groupNameAll = 'all',
+		groups = [
+			{
+				name: groupNameAll
+			},
+			{
+				name: 'Heineken eTrade',
+				employeeEmails: [
+					'andrey.andreychenko@valtech.nl',
+					'anton.zelentsov@valtech.nl',
+					'barry.van.oven@valtech.nl',
+					'diederik.van.egmond@valtech.nl',
+					'dimitrios.androutsos@valtech.nl',
+					'elise.puijk@valtech.nl',
+					'frank.van.lith@valtech.nl',
+					'jeroen.van.haperen@valtech.nl',
+					'jorian.pieneman@valtech.nl',
+					'juancarlos.muro@valtech.nl',
+					'lilia.silvestrova@valtech.nl',
+					'max.de.rooij@valtech.nl',
+					'milou.van.kooij@valtech.nl',
+					'reinoud.van.dalen@valtech.nl',
+					'ruud.volkers@valtech.nl',
+					'stefan.kuiper@valtech.nl'
+				]
+			}
+		],
+		formerEmployeeEmails = [
+			'hylco.douwes@valtech.nl',
+			'john.beitler@valtech.nl'
+		];
 
 	let simulationTimer,
 		employeeNodes,
@@ -461,6 +494,22 @@
 
 		return weekDatasets;
 	};
+
+
+	/**
+	* populate groups with employees
+	* @returns {undefined}
+	*/
+	const populateGroups = function() {
+		groups.forEach((group) => {
+			if (group.name === groupNameAll) {
+				group.employees = employees;
+			} else {
+				group.employees = employees.filter((emp) => group.employeeEmails.includes(emp.email));
+			}
+		});
+	};
+	
 	
 
 	/**
@@ -476,6 +525,8 @@
 		weekDatasets.forEach((weekData, weekIdx) => {
 			processWeekData(weekData, weekIdx);
 		});
+
+		populateGroups();
 	};
 
 
@@ -616,8 +667,10 @@
 	*/
 	const drawGraph = function() {
 		// add shapes
+		selectedEmployees = groups[1].employees;
+		// console.log(employees);
 		employeeNodes = graph.selectAll('.employee-node')
-			.data(employees)
+			.data(selectedEmployees)
 			.enter()
 			.append('div')
 			.attr('data-initials', d => d.initials)
@@ -638,7 +691,7 @@
 		nodeRadius = typicalNode.getBoundingClientRect().width/2,
 		nodeDistance = nodeRadius * 0.05;
 
-		simulation.nodes(employees)
+		simulation.nodes(selectedEmployees)
 			.on('tick', () => { tickHandler(employeeNodes) });
 		scheduleSimulationStop();
 		setTimeout(() => {changeWeek(+1);}, 1000);
