@@ -47,6 +47,9 @@
 	const teamSelector = document.getElementById('team-selector');
 	const teamAllId = 'all';
 	const teams = {
+			all: {
+				name: 'Amersforce'
+			},
 			etrade: {
 				name: 'Heineken eTrade',
 				employeeEmails: [
@@ -68,9 +71,20 @@
 					'stefan.kuiper@valtech.nl'
 				]
 			},
-			all: {
-				name: 'Amersforce'
-			},
+			yamaha: {
+				name: 'Yamaha',
+				employeeEmails: [
+					'jaron.barends@valtech.nl',
+					'margje.tempelaars@valtech.nl',
+					'michael.oudenalder@valtech.nl',
+					'oleksii.horobei@valtech.com',
+					'olga.lotova@valtech.nl',
+					'olha.koval@valtech.com',
+					'rik.smeenk@valtech.nl',
+					'robin.simon@valtech.nl',
+					'tijmen.gelijsteen@valtech.nl'
+				]
+			}
 		};
 	const formerEmployeeEmails = [
 			'hylco.douwes@valtech.nl',
@@ -681,6 +695,10 @@
 		// add shapes
 		selectedEmployees = getCurrentTeam().employees;
 		// selectedEmployees = teams['etrade'].employees;
+console.log(selectedEmployees);
+		employees.forEach((emp) => {
+			console.log(emp.email);
+		});
 		employeeNodes = graph.selectAll('.employee-node')
 			.data(selectedEmployees)
 			.enter()
