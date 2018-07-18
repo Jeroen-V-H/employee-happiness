@@ -118,8 +118,13 @@ button[disabled] {
 	text-align: center;
 }
 
-	.group-selector-form {
+	.team-selector-form {
 		margin: 0 0 1em;
+	}
+
+	.team-selector {
+		display: inline-block;
+		width: 10em;
 	}
 
 /*-- Start week display --*/

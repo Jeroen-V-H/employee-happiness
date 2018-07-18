@@ -69,7 +69,7 @@
 				]
 			},
 			all: {
-				name: teamAllId
+				name: 'Amersforce'
 			},
 		};
 	const formerEmployeeEmails = [
