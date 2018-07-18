@@ -7,6 +7,7 @@
 	.fList{list-style:none}
 	sub, sup {font-size: 0.8em;vertical-align:sub;}
 	sup { vertical-align: super;}
+	form, input, select, option { font: inherit; color: inherit; }
 /*-- End reset --*/
 
 :root {
@@ -116,6 +117,10 @@ button[disabled] {
 	width: 20em;
 	text-align: center;
 }
+
+	.group-selector-form {
+		margin: 0 0 1em;
+	}
 
 /*-- Start week display --*/
 

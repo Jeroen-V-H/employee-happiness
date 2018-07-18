@@ -32,6 +32,7 @@
 	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
 	// https://gka.github.io/palettes/#colors=#c00,#fc0|steps=4|bez=1|coL=1
 	const colors = ['#cc0000','#cc0000','#cc0000','#e06000','#f19800','#ffcc00','#b9b400','#709b00','#008000'];
+	// add subjective scores for different degrees of hapiness and business
 	const happinessScores = [-4, -2, 0, 1, 2];
 	const businessScores = [-2, -1, 0, -1, -2];
 	const minHappinessScore = Math.min(...happinessScores);
@@ -43,12 +44,13 @@
 	const happinessScale = d3.scaleLinear().domain([1, 5]).range([0, width]);
 	const businessScale = d3.scaleLinear().domain([1, 5]).range([height, 0]);
 
-	const groupNameAll = 'all';
-	const groups = [
-			{
-				name: groupNameAll
+	const teamSelector = document.getElementById('team-selector');
+	const teamAllId = 'all';
+	const teams = {
+			all: {
+				name: teamAllId
 			},
-			{
+			etrade: {
 				name: 'Heineken eTrade',
 				employeeEmails: [
 					'andrey.andreychenko@valtech.nl',
@@ -69,7 +71,7 @@
 					'stefan.kuiper@valtech.nl'
 				]
 			}
-		];
+		};
 	const formerEmployeeEmails = [
 			'hylco.douwes@valtech.nl',
 			'john.beitler@valtech.nl'
@@ -497,18 +499,29 @@
 
 
 	/**
-	* populate groups with employees
+	* populate teams with employees
 	* @returns {undefined}
 	*/
-	const populateGroups = function() {
-		groups.forEach((group) => {
-			if (group.name === groupNameAll) {
-				group.employees = employees;
+	const populateTeams = function() {
+		console.log(Object.entries(teams));
+		for(const [teamId, team] of Object.entries(teams)) {
+			console.log(teamId, team);
+			if (teamId === teamAllId) {
+				team.employees = employees;
 			} else {
-				group.employees = employees.filter((emp) => group.employeeEmails.includes(emp.email));
+				team.employees = employees.filter((emp) => team.employeeEmails.includes(emp.email));
 			}
-		});
+		};
 	};
+
+	/**
+	* get the currently selected team
+	* @returns {undefined}
+	*/
+	const getCurrentTeam = function() {
+		const teamIdx = teamSelector.val();
+	};
+	
 	
 	
 
@@ -526,7 +539,7 @@
 			processWeekData(weekData, weekIdx);
 		});
 
-		populateGroups();
+		populateTeams();
 	};
 
 
@@ -667,7 +680,7 @@
 	*/
 	const drawGraph = function() {
 		// add shapes
-		selectedEmployees = groups[1].employees;
+		selectedEmployees = teams[teamAllId].employees;
 		// console.log(employees);
 		employeeNodes = graph.selectAll('.employee-node')
 			.data(selectedEmployees)
@@ -697,6 +710,16 @@
 		scheduleSimulationStop();
 		setTimeout(() => {changeWeek(+1);}, 1000);
 	};
+
+	/**
+	* 
+	* @returns {undefined}
+	*/
+	const changeTeam = function(elm) {
+		const teamIdx = parseInt(elm.currentTarget.value, 10);
+		
+	};
+	
 	
 
 
@@ -714,6 +737,14 @@
 			changeWeek(-1);
 		});
 
+		// init team selector
+		teams.forEach((team, i) => {
+			let option = document.createElement('option');
+			option.textContent = team.name;
+			option.value = i;
+			teamSelector.appendChild(option);
+		});
+		teamSelector.addEventListener('change', changeTeam);
 	};
 
 
