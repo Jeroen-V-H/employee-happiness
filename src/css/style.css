@@ -125,6 +125,7 @@ button[disabled] {
 	.team-selector {
 		display: inline-block;
 		width: 10em;
+		color: #00bdfa;
 	}
 
 /*-- Start week display --*/
