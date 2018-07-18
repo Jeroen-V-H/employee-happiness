@@ -47,9 +47,6 @@
 	const teamSelector = document.getElementById('team-selector');
 	const teamAllId = 'all';
 	const teams = {
-			all: {
-				name: teamAllId
-			},
 			etrade: {
 				name: 'Heineken eTrade',
 				employeeEmails: [
@@ -70,7 +67,10 @@
 					'ruud.volkers@valtech.nl',
 					'stefan.kuiper@valtech.nl'
 				]
-			}
+			},
+			all: {
+				name: teamAllId
+			},
 		};
 	const formerEmployeeEmails = [
 			'hylco.douwes@valtech.nl',
@@ -503,9 +503,7 @@
 	* @returns {undefined}
 	*/
 	const populateTeams = function() {
-		console.log(Object.entries(teams));
 		for(const [teamId, team] of Object.entries(teams)) {
-			console.log(teamId, team);
 			if (teamId === teamAllId) {
 				team.employees = employees;
 			} else {
@@ -519,7 +517,8 @@
 	* @returns {undefined}
 	*/
 	const getCurrentTeam = function() {
-		const teamIdx = teamSelector.val();
+		const teamIdx = teamSelector.value;
+		return teams[teamIdx];
 	};
 	
 	
@@ -680,8 +679,8 @@
 	*/
 	const drawGraph = function() {
 		// add shapes
-		selectedEmployees = teams[teamAllId].employees;
-		// console.log(employees);
+		selectedEmployees = getCurrentTeam().employees;
+		// selectedEmployees = teams['etrade'].employees;
 		employeeNodes = graph.selectAll('.employee-node')
 			.data(selectedEmployees)
 			.enter()
@@ -716,8 +715,9 @@
 	* @returns {undefined}
 	*/
 	const changeTeam = function(elm) {
-		const teamIdx = parseInt(elm.currentTarget.value, 10);
-		
+		// const teamIdx = parseInt(elm.currentTarget.value, 10);
+		document.getElementById('graph').innerHTML = '';
+		drawGraph();
 	};
 	
 	
@@ -738,12 +738,13 @@
 		});
 
 		// init team selector
-		teams.forEach((team, i) => {
+		const teamsArr = Object.entries(teams);
+		for (const [teamId, team] of Object.entries(teams)) {
 			let option = document.createElement('option');
 			option.textContent = team.name;
-			option.value = i;
+			option.value = teamId;
 			teamSelector.appendChild(option);
-		});
+		};
 		teamSelector.addEventListener('change', changeTeam);
 	};
 
@@ -851,8 +852,8 @@
 			.then((result) => {
 				const data = result.values;
 				processData(data);
-				drawGraph();
 				initInterface();
+				drawGraph();
 			})
 		};
 		
