@@ -20,9 +20,9 @@
 	let employees = [];
 	let selectedEmployees = [];
 	let weekDatasets = [];
-	let periodQuestions = [],
-		periodAnswerTimer,
-		currWeekNumber;
+	let periodQuestions = [];
+	let periodAnswerTimer;
+	let currWeekNumber;
 	let currPeriodIdx = -1;
 	let prevPeriodIdx = 0;
 	let totalPeriods = 0;
@@ -91,9 +91,8 @@
 			'john.beitler@valtech.nl'
 		];
 
-	let simulationTimer,
-		employeeNodes,
-		prevMoodNodes;
+	let simulationTimer;
+	let employeeNodes;
 	let nodeRadius = 25;// will be calculated by js
 	let nodeDistance = 3;
 
@@ -147,7 +146,7 @@
 	const getInitials = function(email) {
 		const parts = email.split('@')[0].split('.');
 		const nonCaps = [
-				'de', 'den', 'der', 'van', 'op', 't', 'vande', 'vanden', 'vander', 'opt'
+				'de', 'den', 'der', 'van', 'vd', 'op', 't', 'vande', 'vanden', 'vander', 'opt'
 			];
 		let initials = '';
 
@@ -415,18 +414,25 @@
 			answers: []
 		};
 
-		let rowCounter = 0;
 		weekData.data.forEach((employeeRow) => {
-			rowCounter++;
 			const email = employeeRow[fields.email].toLowerCase();
-			const emailWithoutTld = getEmailWithoutTld(email);
 			let employee;
 			let isNewlyAdded = false;
 
 			//check if employee is already in employees-array
 			// d3 works easier with normal arrays than with associative ones, so I can't use email as array-index
-			let employeeIndex = employeeEmails.indexOf(email);
-			if (employeeIndex === -1) {
+			// also, prevent .com/.nl duplicates
+			let employeeIndex;
+			const filteredArray = employeeEmails.filter((eml, i) => {
+				const isPresent = getEmailWithoutTld(eml) === getEmailWithoutTld(email);
+				if (isPresent) {
+					employeeIndex = i;
+				}
+				return isPresent;
+			});
+			const isNotYetInArray = (filteredArray.length === 0);
+
+			if (isNotYetInArray) {
 				// add new employee to array
 				employee = {
 					email: email,
@@ -519,9 +525,9 @@
 	const populateTeams = function() {
 		for(const [teamId, team] of Object.entries(teams)) {
 			if (teamId === teamAllId) {
-				team.employees = employees;
+				team.employees = employees.filter((emp) => !formerEmployeeEmails.includes(emp.email));
 			} else {
-				team.employees = employees.filter((emp) => team.employeeEmails.includes(emp.email));
+				team.employees = employees.filter((emp) => team.employeeEmails.includes(emp.email) && !formerEmployeeEmails.includes(emp.email));
 			}
 		};
 	};
@@ -563,7 +569,6 @@
 	* @param {d3 selection} employee - The employee's object
 	*/
 	const showEmployeeDetails = function(employee) {
-		// const email = d[d.column] employeeIndex = employeeEmails.indexOf(email);
 		console.log(employee);
 	};
 	
@@ -694,11 +699,6 @@
 	const drawGraph = function() {
 		// add shapes
 		selectedEmployees = getCurrentTeam().employees;
-		// selectedEmployees = teams['etrade'].employees;
-console.log(selectedEmployees);
-		employees.forEach((emp) => {
-			console.log(emp.email);
-		});
 		employeeNodes = graph.selectAll('.employee-node')
 			.data(selectedEmployees)
 			.enter()

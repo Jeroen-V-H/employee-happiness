@@ -11,7 +11,7 @@
 /*-- End reset --*/
 
 :root {
-	--node-size: 36px;
+	--node-size: 32px;
 	--node-radius: calc(var(--node-size)/2);
 	--indicator-translation: -80px;
 }
@@ -205,8 +205,8 @@ button[disabled] {
 .canvas {
 	position: relative;
 	margin: 100px;
-	width: 540px;
-	height: 540px;
+	width: 480px;
+	height: 480px;
 }
 
 .graph {
@@ -242,7 +242,8 @@ button[disabled] {
 	border-radius: 50%;
 	color: #00bdfa;
 	background: currentColor;
-	font-size: 1.4rem;
+	font-size: 1.2rem;
+	letter-spacing: 0.05em;
 	transform: translate(-50%, -50%);
 	transition: transform 0.3s;
 }
@@ -262,6 +263,7 @@ button[disabled] {
 	top: 50%;
 	left: 50%;
 	font-family: 'arial narrow';
+	font-weight: bold;
 	text-align: center;
 	color: white;
 	content: attr(data-initials);
