@@ -68,7 +68,8 @@
 					'milou.van.kooij@valtech.nl',
 					'reinoud.van.dalen@valtech.nl',
 					'ruud.volkers@valtech.nl',
-					'stefan.kuiper@valtech.nl'
+					'stefan.kuiper@valtech.nl',
+					'sunniva.de.haan@valtech.nl'
 				]
 			},
 			yamaha: {
@@ -267,12 +268,12 @@
 			nextElm.removeAttribute('disabled');
 		}
 
-		const fdow = weekDatasets[currPeriodIdx].firstDayOfWeek;
-		const day = fdow.toLocaleString('en-us', { weekday: 'long'});
-		const month = fdow.toLocaleString('en-us', { month: 'long'});
+		const mow = weekDatasets[currPeriodIdx].mondayOfWeek;
+		const day = mow.toLocaleString('en-us', { weekday: 'long'});
+		const month = mow.toLocaleString('en-us', { month: 'long'});
 
 		document.getElementById('first-day__name').textContent = day;
-		document.getElementById('first-day__date').textContent = fdow.getDate();
+		document.getElementById('first-day__date').textContent = mow.getDate();
 		document.getElementById('first-day__month').textContent = month;
 		document.getElementById('week-number__value').textContent = currWeekNumber;
 	};
@@ -499,13 +500,14 @@
 		let weekData;
 
 		data.forEach((row) => {
-			const { weekNr, firstDayOfWeek } = getRowWeekDateInfo(row);
+			const { weekNr, firstPollDayOfWeek, mondayOfWeek } = getRowWeekDateInfo(row);
 
 			if (!lastWeekNr || weekNr !== lastWeekNr) {
 				// first row for this week
 				weekData = {
 					weekNr,
-					firstDayOfWeek,
+					firstPollDayOfWeek,
+					mondayOfWeek,
 					data: []
 				};
 				weekDatasets.push(weekData);
@@ -816,21 +818,23 @@
 			const year = parseInt(tmStr.substr(6, 4), 10);
 			const tm = new Date(year, month, day);
 			const weekNr = getWeekNumber(tm)[1];
-			const firstDayOfWeek = getDateOfISOWeek(weekNr, year);
+			const mondayOfWeek = getDateOfISOWeek(weekNr, year);
+			const firstPollDayOfWeek = getFridayBeforeThisWeek(weekNr, year);// first day you could fill in the form
 
 			return {
 				weekNr,
-				firstDayOfWeek
+				mondayOfWeek,
+				firstPollDayOfWeek
 			};
 		};
 
 
 		/**
-		* get 1st day of week by week number
+		* get Monday of week by week number
 		* https://stackoverflow.com/questions/16590500/javascript-calculate-date-from-week-number
-		* @returns {Date}
 		* @param {number} weekNr - the week number
 		* @param {number} year
+		* @returns {Date}
 		*/
 		function getDateOfISOWeek(weekNr, year) {
 			var simple = new Date(year, 0, 1 + (weekNr - 1) * 7);
@@ -843,6 +847,21 @@
 			}
 			return ISOweekStart;
 		}
+
+		/**
+		* get the Friday of the week before the current one - that's when you can start filling out the form for the current week
+		* @param {Date} monday - The Monday of the current week
+		* @returns {Date}
+		*/
+		const getFridayBeforeThisWeek = function(weekNr, year) {
+			const monday = getDateOfISOWeek(weekNr, year);
+			const mondayTimestamp = +monday;
+			const fridayTimestamp = mondayTimestamp - 3*24*3600*1000;
+			const friday = new Date(fridayTimestamp);
+			
+			return friday;
+		};
+		
 		
 
 	//-- End helper functions
