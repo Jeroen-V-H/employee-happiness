@@ -50,49 +50,50 @@
 			all: {
 				name: 'Amersforce'
 			},
-			etrade: {
-				name: 'Heineken eTrade',
-				employeeEmails: [
-					'andrey.andreychenko@valtech.nl',
-					'anton.zelentsov@valtech.nl',
-					'barry.van.oven@valtech.nl',
-					'diederik.van.egmond@valtech.nl',
-					'dimitrios.androutsos@valtech.nl',
-					'elise.puijk@valtech.nl',
-					'jeroen.van.haperen@valtech.nl',
-					'jorian.pieneman@valtech.nl',
-					'juancarlos.muro@valtech.nl',
-					'lilia.silvestrova@valtech.nl',
-					'max.de.rooij@valtech.nl',
-					'milou.van.kooij@valtech.nl',
-					'reinoud.van.dalen@valtech.nl',
-					'ruud.volkers@valtech.nl',
-					'stefan.kuiper@valtech.nl',
-					'sunniva.de.haan@valtech.nl',
-					'thomas.serbrock@valtech.com',
-					'christopher.fusseder@valtech.com',
-					'alexander.shamarok@valtech.com'
-				]
-			},
-			yamaha: {
-				name: 'Yamaha',
-				employeeEmails: [
-					'jaron.barends@valtech.nl',
-					'margje.tempelaars@valtech.nl',
-					'michael.oudenalder@valtech.nl',
-					'oleksii.horobei@valtech.com',
-					'olga.lotova@valtech.nl',
-					'olha.koval@valtech.com',
-					'rik.smeenk@valtech.nl',
-					'robin.simon@valtech.nl',
-					'tijmen.gelijsteen@valtech.nl'
-				]
-			}
+			// etrade: {
+			// 	name: 'Heineken eTrade',
+			// 	employeeEmails: [
+			// 		'andrey.andreychenko@valtech.nl',
+			// 		'anton.zelentsov@valtech.nl',
+			// 		'barry.van.oven@valtech.nl',
+			// 		'diederik.van.egmond@valtech.nl',
+			// 		'dimitrios.androutsos@valtech.nl',
+			// 		'elise.puijk@valtech.nl',
+			// 		'jeroen.van.haperen@valtech.nl',
+			// 		'jorian.pieneman@valtech.nl',
+			// 		'juancarlos.muro@valtech.nl',
+			// 		'lilia.silvestrova@valtech.nl',
+			// 		'max.de.rooij@valtech.nl',
+			// 		'milou.van.kooij@valtech.nl',
+			// 		'reinoud.van.dalen@valtech.nl',
+			// 		'ruud.volkers@valtech.nl',
+			// 		'stefan.kuiper@valtech.nl',
+			// 		'sunniva.de.haan@valtech.nl',
+			// 		'thomas.serbrock@valtech.com',
+			// 		'christopher.fusseder@valtech.com',
+			// 		'alexander.shamarok@valtech.com'
+			// 	]
+			// },
+			// yamaha: {
+			// 	name: 'Yamaha',
+			// 	employeeEmails: [
+			// 		'jaron.barends@valtech.nl',
+			// 		'margje.tempelaars@valtech.nl',
+			// 		'michael.oudenalder@valtech.nl',
+			// 		'oleksii.horobei@valtech.com',
+			// 		'olga.lotova@valtech.nl',
+			// 		'olha.koval@valtech.com',
+			// 		'rik.smeenk@valtech.nl',
+			// 		'robin.simon@valtech.nl',
+			// 		'tijmen.gelijsteen@valtech.nl'
+			// 	]
+			// }
 		};
 	const formerEmployeeEmails = [
-			'hylco.douwes@valtech.nl',
-			'john.beitler@valtech.nl',
-			'a.vd.schootbrugge'
+			// 'hylco.douwes@valtech.nl',
+			// 'john.beitler@valtech.nl',
+			// 'a.vd.schootbrugge@valtech.nl',
+			// 'a.v.d.schootbrugge@valtech.nl'
 		];
 
 	let simulationTimer;
@@ -164,6 +165,36 @@
 
 		return initials;
 	};
+
+	/**
+	* create teams objects
+	* @returns {undefined}
+	*/
+	const initTeams = function(teamsData) {
+		teamsData.forEach((teamData) => {
+			if (teamData[0] === 'excludeFromChart') {
+				teamData.forEach((value, i) => {
+					if (i > 0) {
+						formerEmployeeEmails.push(value);
+					}
+				});
+			} else {
+				const team = {
+					name,
+					employeeEmails: []
+				};
+				teamData.forEach((value, i) => {
+					if (i === 0) {
+						team.name = value;
+					} else {
+						team.employeeEmails.push(value);
+					}
+				});
+				teams[team.name] = team;
+			}
+		});
+	};
+	
 
 
 
@@ -878,23 +909,36 @@
 		* @returns {undefined}
 		*/
 		const readData = function() {
-			const sheetTabName = 'Team happiness responses';
-			const cellRange = 'A2:G';// all columns, skip 1st row with titles
-			const range = "'" + sheetTabName + "'!" + cellRange;// range in a1 notation https://developers.google.com/sheets/api/guides/concepts#a1_notation
+			const spreadsheetId = '1K4YbGsCSSIJhB0nYArs0XouoOqT1xGyM2KWOdny-tLs';
+			const sheetHappinessTabName = 'Team happiness responses';
+			const happinessCellRange = 'A2:Z';// all columns, skip 1st row with titles
+			const happinessRange = `'${sheetHappinessTabName}'!${happinessCellRange}`;// range in a1 notation https://developers.google.com/sheets/api/guides/concepts#a1_notation
+			const sheetTeamTabName = 'Teams in happiness chart';
+			const teamsRange = `'${sheetTeamTabName}'!2:10000`;// range in a1 notation 
 
-			const options = {
-				spreadsheetId: '1K4YbGsCSSIJhB0nYArs0XouoOqT1xGyM2KWOdny-tLs',
-				range
-			};
+			const happinessPromise = sheetHelper.getData({spreadsheetId, range: happinessRange});
+			const teamsPromise = sheetHelper.getData({spreadsheetId, range: teamsRange, majorDimension:'COLUMNS'});
+
+			Promise.all([teamsPromise, happinessPromise])
+				.then((results) => {
+					const teams = results[0].values;
+					const happinessData = results[1].values;
+
+					initTeams(teams);
+					processData(happinessData);
+					initInterface();
+					drawGraph();
+				});
 		
 			// get data in promise
-			sheetHelper.getData(options)
-			.then((result) => {
-				const data = result.values;
-				processData(data);
-				initInterface();
-				drawGraph();
-			})
+			// sheetHelper.getData(happinessOptions)
+			// .then((result) => {
+			// 	const data = result.values;
+			// 	processData(data);
+			// 	initInterface();
+			// 	drawGraph();
+			// });
+
 		};
 		
 		
