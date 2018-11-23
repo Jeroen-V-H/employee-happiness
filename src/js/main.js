@@ -59,7 +59,6 @@
 					'diederik.van.egmond@valtech.nl',
 					'dimitrios.androutsos@valtech.nl',
 					'elise.puijk@valtech.nl',
-					'frank.van.lith@valtech.nl',
 					'jeroen.van.haperen@valtech.nl',
 					'jorian.pieneman@valtech.nl',
 					'juancarlos.muro@valtech.nl',
@@ -69,7 +68,10 @@
 					'reinoud.van.dalen@valtech.nl',
 					'ruud.volkers@valtech.nl',
 					'stefan.kuiper@valtech.nl',
-					'sunniva.de.haan@valtech.nl'
+					'sunniva.de.haan@valtech.nl',
+					'thomas.serbrock@valtech.com',
+					'christopher.fusseder@valtech.com',
+					'alexander.shamarok@valtech.com'
 				]
 			},
 			yamaha: {
@@ -89,7 +91,8 @@
 		};
 	const formerEmployeeEmails = [
 			'hylco.douwes@valtech.nl',
-			'john.beitler@valtech.nl'
+			'john.beitler@valtech.nl',
+			'a.vd.schootbrugge'
 		];
 
 	let simulationTimer;
