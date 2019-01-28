@@ -46,6 +46,7 @@
 
 	const teamSelector = document.getElementById('team-selector');
 	const teamAllId = 'all';
+	const excludeFromChartId = 'exclude from chart';
 	const teams = {
 			all: {
 				name: 'Amersforce'
@@ -172,7 +173,7 @@
 	*/
 	const initTeams = function(teamsData) {
 		teamsData.forEach((teamData) => {
-			if (teamData[0] === 'excludeFromChart') {
+			if (teamData[0] === excludeFromChartId) {
 				teamData.forEach((value, i) => {
 					if (i > 0) {
 						formerEmployeeEmails.push(value);
