@@ -24,7 +24,7 @@
 		<div class="options">
 			<button id="gsh-signout-button" class="gsh-signout-button">Sign Out</button>
 
-			<div class="graph-controls">
+			<div class="">
 
 				<h1>How happy we <span id="heading-verb">are</span></h1>
 				<form id="team-selector-form" class="team-selector-form">
@@ -33,6 +33,7 @@
 					</select>
 				</form>
 				<p class="when">In the week starting on</p>
+
 				
 				<div id="first-day" class="first-day">
 					<span id="first-day__name" class="first-day__name"></span>
@@ -40,27 +41,18 @@
 				</div>
 				<h2 id="week-number__value" class="week-number__value">&hellip;</h1>
 
-				<div>
-					<button id="show-prev-period" class="prev-period" disabled>
-						<!-- <span class="arrow arrow--prev"></span> -->
-						&laquo; prev week
-					</button><span class="divider">|</span><button id="show-next-period" class="next-period" disabled>
-						next week &raquo;
-					</button>
-				</div>
-				
-				<div>
-					<label class="filter-checkbox"><input id="filter-for-missing" type="checkbox" />  Only missing submissions</label>
-				</div>
-				<div>
-					<label class="filter-checkbox"><input id="filter-for-expired" type="checkbox" />  Include submissions 8+ weeks old</label>
-				</div>
+				<button id="show-prev-period" class="prev-period" disabled>
+					<!-- <span class="arrow arrow--prev"></span> -->
+					&laquo; prev week
+				</button><span class="divider">|</span><button id="show-next-period" class="next-period" disabled>
+					next week &raquo;
+				</button>
 			</div>
 
 			<div id="period-remarks-box" class="period-remarks-box">
-				<h2>Remarks</h2>
+				<h2 class="h3" id="period-question" class="period-question"></h2>
 				<p id="period-answer" class="period-answer"></p>
-			</div>
+			</div>			
 		</div>
 
 		<!-- <div id="chart"></div> -->
@@ -74,13 +66,11 @@
 		</div>
 	</div><!-- /.o-content-width -->
 
-	<script src="js/d3/d3.js"></script>
-	<script src="js/d3/d3.min.js"></script>
+	<script src="js/d3.min.js"></script>
+	<script src="js/d3-dsv.min.js"></script>
 	<script src="js/zup.js"></script>
-	<script src="js/data/google-sheet-helper.js"></script>
-	<script src="js/data/EmployeeData.js"></script>
-	<script src="js/data/WeekData.js"></script>
-	<script src="js/data/Team.js"></script>
+	<script src="js/google-sheet-helper.js"></script>
+	<!-- <script src="js/call.js"></script> -->
 	<script src="js/main.js"></script>
 	
 </body>

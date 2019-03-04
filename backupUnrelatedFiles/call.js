@@ -1,8 +1,5 @@
 let sheetHelper;
 
-
-
-
 /**
 * read data from the sheet
 * @returns {undefined}
@@ -22,7 +19,6 @@ const readData = function() {
 	console.log(sheetHelper.getSpreadsheets());
 };
 
-
 /**
 * get data from google sheet
 * @returns {undefined}
@@ -37,7 +33,6 @@ const getSheetHelper = function() {
 	sheetHelper = window.createGoogleSheetsHelper(sheetOptions);
 };
 
-
 /**
 * initialize stuff for handling google sheet
 * @returns {undefined}
@@ -47,15 +42,7 @@ const initGoogleSheet = function() {
 	getSheetHelper();
 };
 
-
-
 initGoogleSheet();
-
-
-
-
-
-
 
 			// columns:
 			// timestamp

@@ -1,288 +1,314 @@
 ;(() => {
-	'use strict';
 
-	// tell jshint about globals (they should remain commented out)
-	/* globals zup */ //Tell jshint zup exists as global var
+// ---------------------------------------------------------------------------------
+// Definitions data handling
+// ---------------------------------------------------------------------------------
 
-
-	const graphElm = document.getElementById('graph');
-	const width = graphElm.clientWidth;
-	const height = graphElm.clientHeight;
-	const forceStrength = 0.1;
-	const simulationDuration = 2000;
-
-	// const dataFolder = 'data/team-dotnet/',
-	const dataFolder = 'data/team-amersforce/';
-	const dataFileUrlStart = dataFolder + 'Weekly happiness form ';
-	const dataFileUrlEnd = ' (Responses).csv';
-	
-	let employeeEmails = [];// will contain all employees' email (without tld)
-	let employees = [];
-	let selectedEmployees = [];
-	let weekDatasets = [];
-	let periodQuestions = [];
-	let periodAnswerTimer;
-	let currWeekNumber;
-	let currPeriodIdx = -1;
-	let prevPeriodIdx = 0;
-	let totalPeriods = 0;
-
+	const spreadsheetId = '1K4YbGsCSSIJhB0nYArs0XouoOqT1xGyM2KWOdny-tLs';
 	let sheetHelper;
 
-	// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1
-	// https://gka.github.io/palettes/#colors=#c00,#fc0|steps=4|bez=1|coL=1
-	const colors = ['#cc0000','#cc0000','#cc0000','#e06000','#f19800','#ffcc00','#b9b400','#709b00','#008000'];
-	// add subjective scores for different degrees of hapiness and business
-	const happinessScores = [-4, -2, 0, 1, 2];
-	const businessScores = [-2, -1, 0, -1, -2];
-	const minHappinessScore = Math.min(...happinessScores);
-	const maxHappinessScore = Math.max(...happinessScores);
-	const minBusinessScore = Math.min(...businessScores);
-	const maxBusinessScore = Math.max(...businessScores);
-	const minHealthScore = minHappinessScore + minBusinessScore;
-	const maxHealthScore = maxHappinessScore + maxBusinessScore;
-	const happinessScale = d3.scaleLinear().domain([1, 5]).range([0, width]);
-	const businessScale = d3.scaleLinear().domain([1, 5]).range([height, 0]);
-
 	const teamSelector = document.getElementById('team-selector');
-	const teamAllId = 'all';
+	// const teamAllId = 'all';
 	const excludeFromChartId = 'exclude from chart';
 	const teams = {
-			all: {
-				name: 'Amersforce'
-			},
-			// etrade: {
-			// 	name: 'Heineken eTrade',
-			// 	employeeEmails: [
-			// 		'andrey.andreychenko@valtech.nl',
-			// 		'anton.zelentsov@valtech.nl',
-			// 		'barry.van.oven@valtech.nl',
-			// 		'diederik.van.egmond@valtech.nl',
-			// 		'dimitrios.androutsos@valtech.nl',
-			// 		'elise.puijk@valtech.nl',
-			// 		'jeroen.van.haperen@valtech.nl',
-			// 		'jorian.pieneman@valtech.nl',
-			// 		'juancarlos.muro@valtech.nl',
-			// 		'lilia.silvestrova@valtech.nl',
-			// 		'max.de.rooij@valtech.nl',
-			// 		'milou.van.kooij@valtech.nl',
-			// 		'reinoud.van.dalen@valtech.nl',
-			// 		'ruud.volkers@valtech.nl',
-			// 		'stefan.kuiper@valtech.nl',
-			// 		'sunniva.de.haan@valtech.nl',
-			// 		'thomas.serbrock@valtech.com',
-			// 		'christopher.fusseder@valtech.com',
-			// 		'alexander.shamarok@valtech.com'
-			// 	]
-			// },
-			// yamaha: {
-			// 	name: 'Yamaha',
-			// 	employeeEmails: [
-			// 		'jaron.barends@valtech.nl',
-			// 		'margje.tempelaars@valtech.nl',
-			// 		'michael.oudenalder@valtech.nl',
-			// 		'oleksii.horobei@valtech.com',
-			// 		'olga.lotova@valtech.nl',
-			// 		'olha.koval@valtech.com',
-			// 		'rik.smeenk@valtech.nl',
-			// 		'robin.simon@valtech.nl',
-			// 		'tijmen.gelijsteen@valtech.nl'
-			// 	]
-			// }
-		};
-	const formerEmployeeEmails = [
-			// 'hylco.douwes@valtech.nl',
-			// 'john.beitler@valtech.nl',
-			// 'a.vd.schootbrugge@valtech.nl',
-			// 'a.v.d.schootbrugge@valtech.nl'
-		];
+		blacklist: new Team(''),
+		Amersforce: new Team('Amersforce')
+	};
+
+	const missingFilterToggle = document.getElementById('filter-for-missing');
+	const expiredFilterToggle = document.getElementById('filter-for-expired');
+
+	let dividedWeekData = [];
+	let cWeekIdx = 0;
+	let weekDataToShow;
+	let answerTimer;
+	let answers = [];
+	let currentAnswer;
+
+
+// ---------------------------------------------------------------------------------
+// Definitions graph logic
+// ---------------------------------------------------------------------------------
+
+	const graphElm = document.getElementById('graph');
+	const graphWidth = graphElm.clientWidth;
+	const graphHeight = graphElm.clientHeight;
+	let graph = d3.select('#graph')
+		.attr('width', graphWidth)
+		.attr('height', graphHeight);
+	
+	const happinessScale = d3.scaleLinear().domain([1, 5]).range([0, graphWidth]);
+	const businessScale = d3.scaleLinear().domain([1, 5]).range([graphHeight, 0]);
+
+	let simulationDuration = 2000;
+	let employeeNodes;
+	let simulation = d3.forceSimulation();
+	const nodeBaseRadius = 16;
+	const shrinkFactor = 0.7;
+	const growFactor = 1.2;
+	const forceStrength = 0.15;
+	let tracesEnabled = false;
+
+
+// ---------------------------------------------------------------------------------
+// Graph logic
+// ---------------------------------------------------------------------------------
+
+	const tickHandler = function(node) {
+		node.style('left', d => d.x + 'px')
+			.attr('nodeX', d => d.x)
+			.style('top', d => d.y + 'px')
+			.attr('nodeY', d => d.y);;
+	};
 
 	let simulationTimer;
-	let employeeNodes;
-	let nodeRadius = 25;// will be calculated by js
-	let nodeDistance = 3;
-
-	let graph = d3.select('#graph')
-			.attr('width', width)
-			.attr('height', height);
-
-	// define force functions
-	const forceXHappiness = d3.forceX(function(d) {
-		return happinessScale(d.periods[currPeriodIdx].happiness);
-	}).strength(forceStrength);
-
-	const forceYBusiness = d3.forceY(function(d) {
-		return businessScale(d.periods[currPeriodIdx].business);
-	}).strength(forceStrength);
-
-	const forceXCombined = d3.forceX(width / 2).strength(forceStrength);
-	const forceYCombined = d3.forceY(height / 2).strength(forceStrength);
-
-	const forceCollide = d3.forceCollide(function(d) {
-			return nodeRadius + nodeDistance;
-		});
-
-	let simulation = d3.forceSimulation()
-		.force('forceX', forceXCombined)
-		.force('forceY', forceYCombined)
-		.force('collide', forceCollide);
-
-
-
-	/**
-	* strip top level domain of of email (to prevent false duplicates from .com and .nl addresses)
-	* @param {string} email
-	* @returns {string} the stripped email
-	*/
-	const getEmailWithoutTld = function(email) {
-		const regex = /(.+)@([^\.]+)/;
-		const matches = email.match(regex);
-
-		if (matches) {
-			email = matches[1] + '@' + matches[2];
-		}
-		return email;
-	};
-	
-
-	/**
-	* get employee's initials
-	* @returns {undefined}
-	*/
-	const getInitials = function(email) {
-		const parts = email.split('@')[0].split('.');
-		const nonCaps = [
-				'de', 'den', 'der', 'van', 'vd', 'op', 't', 'vande', 'vanden', 'vander', 'opt'
-			];
-		let initials = '';
-
-		parts.forEach((part) => {
-			let char = part.charAt(0).toLowerCase();
-			if (nonCaps.indexOf(part) === -1) {
-				char = char.toUpperCase();
-			}
-			initials += char;
-		});
-
-		return initials;
-	};
-
-	/**
-	* create teams objects
-	* @returns {undefined}
-	*/
-	const initTeams = function(teamsData) {
-		teamsData.forEach((teamData) => {
-			if (teamData[0] === excludeFromChartId) {
-				teamData.forEach((value, i) => {
-					if (i > 0) {
-						formerEmployeeEmails.push(value);
-					}
-				});
-			} else {
-				const team = {
-					name,
-					employeeEmails: []
-				};
-				teamData.forEach((value, i) => {
-					if (i === 0) {
-						team.name = value;
-					} else {
-						team.employeeEmails.push(value);
-					}
-				});
-				teams[team.name] = team;
-			}
-		});
-	};
-	
-
-
-
-	/**
-	* get an employee's health score
-	* @returns {undefined}
-	*/
-	const calculateHealthScore = function(happiness, business) {
-		const happinessScore = happinessScores[happiness -1];
-		const businessScore = businessScores[business -1];
-		const healthScore = happinessScore + businessScore;
-
-		return healthScore;
-	};
-	
-
-
-	/**
-	* 
-	* @returns {undefined}
-	*/
-	const setHealthColors = function() {
-		employeeNodes.style('background', function(d) {
-			const periodHealthScore = d.periods[currPeriodIdx].health;
-
-			// minHealthScore should have colorIdx 0
-			const colorIdx = periodHealthScore - minHealthScore;
-			return colors[colorIdx];
-		})
-		.style('color', function(d) {
-			const periodHealthScore = d.periods[currPeriodIdx].health;
-
-			// minHealthScore should have colorIdx 0
-			const colorIdx = periodHealthScore - minHealthScore;
-			return colors[colorIdx];
-		});
-	};
-
-
-
-	/**
-	* set how recent an entry is
-	* @returns {undefined}
-	*/
-	const setRecentness = function() {
-		employeeNodes.classed('not-from-this-week', (d) => {
-			return (!d.periods[currPeriodIdx].isFromThisWeek);
-		});
-	};
-
-
-
-	/**
-	* 
-	* @returns {undefined}
-	*/
-	const changeWeek = function(increment = 0) {
-		const newPeriodIdx = currPeriodIdx + increment;
-		if (newPeriodIdx >= 0 && newPeriodIdx < totalPeriods) {
-			prevPeriodIdx = currPeriodIdx;
-			currPeriodIdx = newPeriodIdx;
-		}
-		if (newPeriodIdx < 0) {
-			// we start at -1 to make first call to show next show the first period
-			currPeriodIdx = 0;
-		}
-		prevPeriodIdx = Math.max(0, prevPeriodIdx);
-		currWeekNumber = weekDatasets[currPeriodIdx].weekNr;
-
-
-		setHealthColors();
-		setRecentness();
-		showPeriodAnswers();
-		updateWeekDisplay();
-
-		// remove mood traces
-		graphElm.querySelectorAll('.mood-trace').forEach((traceElm) => {
-			graphElm.removeChild(traceElm);
-		});
+	const simulate = function(employeeData, employeeNodes) {
+		tracesEnabled = false;
+		simulation.nodes(employeeData)
+			.on('tick', () => { tickHandler(employeeNodes) });
 
 		simulation
-			.force('forceX', forceXHappiness)
-			.force('forceY', forceYBusiness)
-			.alphaTarget(0.5)
+			.force('forceX', d3.forceX(d => {
+				if (missingFilterToggle.checked) {
+					if (d.isExpired) { return happinessScale(3); }
+					if (d.isMissingEntry) { return happinessScale(3);	}
+				}
+				return happinessScale(d.happinessScore);
+			}).strength(forceStrength))
+
+			.force('forceY', d3.forceY(d => {
+				if (missingFilterToggle.checked && (d.isExpired || d.isMissingEntry)) { return businessScale(3); }
+				return businessScale(d.businessScore)
+			}).strength(forceStrength))
+
+			.force('collide', d3.forceCollide(d => {
+				if (d.isMissingEntry && !missingFilterToggle.checked || d.isExpired) {
+					return nodeBaseRadius * shrinkFactor + 1;
+				}
+				if (missingFilterToggle.checked) {
+					return nodeBaseRadius * growFactor;
+				}
+				return nodeBaseRadius;
+			}).iterations(5).strength(1.2))
+
+			.alphaTarget(0.4)
 			.restart();
-		scheduleSimulationStop();
-	};
+		
+		clearTimeout(simulationTimer);
+		simulationTimer = setTimeout(() => {
+			simulation.stop();
+			tracesEnabled = true;
+		}, simulationDuration);
+	}
+
+	const generateStartX = function() {
+		return (Math.random() * graphWidth / 3) + graphWidth / 3;
+	}
+
+	const generateStartY = function() {
+		return (Math.random() * graphHeight / 3) + graphHeight / 3;
+	}
+
+	const updateStyleProperties = function (selection) {
+		const borderSize = nodeBaseRadius / 8;
+		selection
+			.style('background', function(d) {
+				if (this.classList.contains('not-from-this-week')) {
+					return 'white';
+				}
+				return d.getColor();
+			})
+			.style('border', function(d) {
+				if (this.classList.contains('not-from-this-week')) {
+					return `${borderSize}px solid currentColor`;
+				}
+				return '0px solid currentColor';
+			})
+			.style('color', function(d) {
+				if (this.classList.contains('expired')) { return '#999';	}
+				if (this.classList.contains('not-from-this-week') && missingFilterToggle.checked) { return '#c00'; }
+				return d.getColor();
+			})
+			.style('transform', function(d) {
+				if (this.classList.contains('not-from-this-week')) {
+					const translatePx = nodeBaseRadius + borderSize;
+					if (missingFilterToggle.checked && !this.classList.contains('expired')) {
+						return `translate(-${translatePx}px, -${translatePx}px) scale(1)`;
+					}
+					return `translate(-${translatePx}px, -${translatePx}px) scale(${shrinkFactor})`;
+				}
+				return `translate(-${nodeBaseRadius}px, -${nodeBaseRadius}px) scale(1)`;
+			})
+	}
+
+	const processEmployeeNodes = function(data) {
+		const trDuration = 400;
+
+		return selection = graph.selectAll('.employee-node')
+			.data(data, (d) => { return d ? d.email : this.email })
+				.join(
+					enter => enter.append('div')
+						.attr('data-email', d => d.email)
+						.attr('class', 'employee-node')
+			
+						.attr('data-initials', d => d.getInitials())
+						.attr('title', d => d.getNeatName())
+			
+						.classed('not-from-this-week', d => d.isMissingEntry)
+						.classed('expired', d => d.isExpired)
+			
+						.style('width', (nodeBaseRadius * 2) + 'px')
+						.style('height', (nodeBaseRadius * 2) + 'px')
+			
+						.style('left', d => { d.x = generateStartX(); return d.x + 'px' })
+						.style('top', d => { d.y = generateStartY(); return d.y + 'px' })
+
+						.call(updateStyleProperties)
+
+						.on('click', function(d) {	console.log(d) })
+						.on('mouseenter', function(d) { generateTrace(d) })
+						.on('mouseleave', function(d) { removeTraces() }),
+
+					update => update
+						.classed('not-from-this-week', d => d.isMissingEntry)
+						.classed('expired', d => d.isExpired)
+
+						.attr('nodeX', function(d) {
+							const nodeX = this.getAttribute('nodeX');
+							d.x = Math.round(parseInt(nodeX, 10));
+							return d.x;
+						})
+						.attr('nodeY', function(d) {
+							const nodeY = this.getAttribute('nodeY');
+							d.y = Math.round(parseInt(nodeY, 10));
+							return d.y;
+						})
+						.style('left', d => d.x + 'px')
+						.style('top', d => d.y + 'px')
+
+						.call(update => update.interrupt())
+						.call(update => update.transition()
+							.duration(trDuration)
+							.call(updateStyleProperties))
+						);
+	}
+
+	const generateTrace = function(employee) {
+		const lastWeekEmployeeData = dividedWeekData[cWeekIdx - 1 >= 0 ? cWeekIdx - 1 : 0].employees;
+
+		const lastWeekEntry = lastWeekEmployeeData.find((lastEntry) => {
+			if (lastEntry.email !== 'Average') { return lastEntry.email === employee.email }
+		});
+
+		if (lastWeekEntry && !lastWeekEntry.isMissingEntry && !employee.isMissingEntry && tracesEnabled) {
+			const lastWeekHappinessDiffers = lastWeekEntry.happinessScore !== employee.happinessScore;
+			const lastWeekBusinessDiffers = lastWeekEntry.businessScore !== employee.businessScore;
+
+			if (lastWeekHappinessDiffers || lastWeekBusinessDiffers) {
+				createMotionTrace(employee, lastWeekEntry);
+			} else {
+				createIdleTrace(employee);
+			}
+		}
+	}
+
+	const createMotionTrace = function(employee, lastEntry) {
+		const prevLeft = happinessScale(lastEntry.happinessScore);
+		const prevTop = businessScale(lastEntry.businessScore);
+
+		const currentNode = graphElm.querySelector(`.employee-node[data-email="${employee.email}"]`);
+		const currLeft = parseInt(currentNode.style.left, 10);
+		const currTop = parseInt(currentNode.style.top, 10);
+
+		const dx = prevLeft - currLeft;// distance from curr to prev
+		const dy = prevTop - currTop;
+		const length = Math.sqrt(dx*dx + dy*dy);
+		const alphaRadians = Math.atan(dy/dx);
+
+		let alpha = alphaRadians * 180/Math.PI;
+		if (dx < 0) {
+			alpha += 180;
+		}
+
+		const changedStyle = {
+			color: currentNode.style.color,
+			borderLeft: '0px solid currentColor',
+			borderRight: 'none',
+			borderLeftWidth: length + 'px',
+			borderRadius: '0 50% 50% 0',
+			transform: `translate(0, -${nodeBaseRadius}px) rotate(${alpha}deg)`, // use this with height
+			transformOrigin: 'center left',
+		};
+
+		const traceElm = document.createElement('div');
+		traceElm.classList.add('mood-trace');
+		Object.assign(traceElm.style, changedStyle);
+
+		currentNode.appendChild(traceElm);
+	}
+
+	const createIdleTrace = function(employee) {
+		const currentNode = graphElm.querySelector(`.employee-node[data-email="${employee.email}"]`);
+		const traceRadius = nodeBaseRadius + 6;
+
+		const changedStyle = {
+			color: currentNode.style.color,
+			width: '0px',
+			height: '0px',
+			background: 'solid',
+			border: `${traceRadius}px solid`,
+			transform: `translate(-${traceRadius}px, -${traceRadius}px)`,
+		};
+
+		const traceElm = document.createElement('div');
+		traceElm.classList.add('mood-trace');
+		Object.assign(traceElm.style, changedStyle);
+
+		currentNode.appendChild(traceElm);
+	}
+
+	const removeTraces = function() {
+		graphElm.querySelectorAll('.mood-trace').forEach((traceElm) => { 
+			traceElm.parentNode.removeChild(traceElm);
+		});
+	}
+
+	const drawRegularGraph = function() {
+		removeTraces();
+
+		let employeesToShow = weekDataToShow.employees;
+		if (!expiredFilterToggle.checked) {
+			employeesToShow = filterOutExpired(employeesToShow);
+		}
+		employeeNodes = processEmployeeNodes(employeesToShow);
+		
+		simulate(employeesToShow, employeeNodes);
+	}
+
+	const drawExpiredGraph = function() {
+		removeTraces();
+
+		let employeesToShow = filterForMissing(weekDataToShow.employees)
+		if (!expiredFilterToggle.checked) {
+			employeesToShow = filterOutExpired(employeesToShow);
+		}
+		employeeNodes = processEmployeeNodes(employeesToShow);
+
+		simulate(employeesToShow, employeeNodes);
+	}
+
+	const drawFilteredGraph = function() {
+		if (missingFilterToggle.checked) {
+			drawExpiredGraph();
+		} else {
+			drawRegularGraph();
+		}
+	}
+
+
+// ---------------------------------------------------------------------------------
+// Interface
+// ---------------------------------------------------------------------------------	
 
 	/**
 	* update current week display
@@ -291,492 +317,42 @@
 	const updateWeekDisplay = function() {
 		const prevElm = document.getElementById('show-prev-period');
 		const nextElm = document.getElementById('show-next-period');
-		if (currPeriodIdx === 0) {
+		if (cWeekIdx === 0) {
 			prevElm.setAttribute('disabled', 'disabled');
 		} else {
 			prevElm.removeAttribute('disabled');
 		}
 
-		if (currPeriodIdx === totalPeriods-1) {
+		if (cWeekIdx === dividedWeekData.length - 1) {
 			nextElm.setAttribute('disabled', 'disabled');
 		} else {
 			nextElm.removeAttribute('disabled');
 		}
 
-		const mow = weekDatasets[currPeriodIdx].mondayOfWeek;
+		const mow = dividedWeekData[cWeekIdx].mondayOfWeek;
 		const day = mow.toLocaleString('en-us', { weekday: 'long'});
 		const month = mow.toLocaleString('en-us', { month: 'long'});
 
 		document.getElementById('first-day__name').textContent = day;
 		document.getElementById('first-day__date').textContent = mow.getDate();
 		document.getElementById('first-day__month').textContent = month;
-		document.getElementById('week-number__value').textContent = currWeekNumber;
-	};
-	
-	
-
-
-	/**
-	* get the object for the team average; create it if it doesn't exist yet
-	* @returns {object} object like employee-object
-	*/
-	const getAverageObject = function() {
-		const avgString = 'team-average';
-		let avgObj;
-		let avgIndex = employeeEmails.indexOf(avgString);
-
-		if (avgIndex === -1) {
-			avgObj = {
-				email: '',
-				name: 'Team Average',
-				initials: 'AVG',
-				periods: [],
-				isAVGObject: true
-			};
-			employees.push(avgObj);
-			employeeEmails.push(avgString);
-			avgIndex = employees.length -1;
-		}
-		avgObj = employees[avgIndex];
-
-		return avgObj;
+		document.getElementById('week-number__value').textContent = dividedWeekData[cWeekIdx].weekNumber;
 	};
 
-
-
-	/**
-	* for new employees, add dummy moods for the periods where they weren't present yet
-	* @returns {undefined}
-	*/
-	const addNewEmployeeDummyMoods = function(employee, mood, weekIdx) {
-		const dummyMood = Object.assign({}, mood, { isFromThisWeek: false});
-		for (let i=0; i<weekIdx; i++) {
-			employee.periods.push(dummyMood);
-		}
-	};
-
-
-
-	/**
-	* add moods for employees that already have an entry, but are not in the current period
-	* @returns {undefined}
-	*/
-	const addMissingEmployeeMoods = function(dataset, weekIdx) {
-		employees.forEach((employee) => {
-			const periods = employee.periods;
-			const periodCount = periods.length;
-
-			if (periodCount <= weekIdx) {
-				// we're missing periods; take the last known mood as reference
-				const dummyMood = Object.assign({}, periods[periodCount-1], {isFromThisWeek: false});
-				for (let i=periodCount; i <= weekIdx; i++) {
-					periods.push(dummyMood);
-				}
-			}
-		});
-	};
-
-
-	
-	/**
-	* 
-	* @returns {undefined}
-	*/
-	const calculateWeekAverageMood = function(weekData, teamHappiness, teamBusiness, teamHealth) {
-		const avgObj = getAverageObject();
-		const numEntries = weekData.data.length;
-		let mood;
-
-		if (numEntries > 0) {
-			mood = {
-				happiness: (teamHappiness/numEntries).toFixed(1),
-				business: (teamBusiness/numEntries).toFixed(1),
-				health: (teamHealth/numEntries).toFixed(1),
-				isFromThisWeek: true
-			};
-		} else {
-			mood = {
-				happiness: 3,
-				business: 3,
-				health: 0,
-			};
-		}
-
-		// we don't want avarage object to change color
-		// health colors are an integer, and that integer is used as index on color array
-		// by adding 0.01, avg health will never match an item in the color array
-		mood.health += 0.01;
-		avgObj.periods.push(mood);
-	};
-	
-
-	/**
-	* get mapping from questions to sheet columns
-	* @returns {undefined}
-	*/
-	const getFieldMapping = function() {
-		const fields = {
-			timestamp: 0,
-			email: 1,
-			name: 2,
-			happiness: 3,
-			business: 4,
-			otherQuestion: 5
-		};
-
-		return fields;
-	};
-	
-	
-
-	/**
-	* process dataset of 1 period
-	* @param {object} weekData - Current week's data {weekNr, data}
-	* @param {number} weekIdx - Index of this week in weekDatasets (useful for tracking how many weeks have been processed)
-	* @returns {undefined}
-	*/
-	const processWeekData = function(weekData, weekIdx) {
-		// map column numbers to vars
-		const fields = getFieldMapping();
-
-		let teamHappiness = 0;
-		let teamBusiness = 0;
-		let teamHealth = 0;
-
-		// USE ONLY REMARK HERE NOW
-		const periodQuestion = {
-			// question: fields.otherQuestion,
-			question: 'this week\'s remarks:',
-			answers: []
-		};
-
-		weekData.data.forEach((employeeRow) => {
-			const email = employeeRow[fields.email].toLowerCase();
-			let employee;
-			let isNewlyAdded = false;
-
-			//check if employee is already in employees-array
-			// d3 works easier with normal arrays than with associative ones, so I can't use email as array-index
-			// also, prevent .com/.nl duplicates
-			let employeeIndex;
-			const filteredArray = employeeEmails.filter((eml, i) => {
-				const isPresent = getEmailWithoutTld(eml) === getEmailWithoutTld(email);
-				if (isPresent) {
-					employeeIndex = i;
-				}
-				return isPresent;
-			});
-			const isNotYetInArray = (filteredArray.length === 0);
-
-			if (isNotYetInArray) {
-				// add new employee to array
-				employee = {
-					email: email,
-					name: employeeRow[fields.name],
-					initials: getInitials(email),
-					periods: []
-				};
-				employees.push(employee);
-				employeeEmails.push(email);// this way, index in emails array corresponds with the one in employees array
-				employeeIndex = employees.length -1;
-				isNewlyAdded = true;
-			}
-
-			// now do stuff for both just and previously added employees
-			employee = employees[employeeIndex];
-
-			const happiness = +employeeRow[fields.happiness];
-			const business = +employeeRow[fields.business];
-			const health = calculateHealthScore(happiness, business);
-			const answer = employeeRow[fields.otherQuestion];
-			const mood = {
-					happiness,
-					business,
-					health,
-					otherQuestion: {
-						question: fields.otherQuestion,
-						answer
-					},
-					isFromThisWeek: true
-				};
-
-			// I'm still assuming that every employee is present in every period.
-			// so we need to add a dummy-mood for new employees for all past weeks
-			if (isNewlyAdded) {
-				addNewEmployeeDummyMoods(employee, mood, weekIdx);
-			}
-			employee.periods.push(mood);
-
-			if (answer) {
-				periodQuestion.answers.push(answer);
-			}
-
-			teamHappiness += happiness;
-			teamBusiness += business;
-			teamHealth += health;
-		});
-
-		periodQuestions.push(periodQuestion);
-
-		calculateWeekAverageMood(weekData, teamHappiness, teamBusiness, teamHealth);
-
-		// add moods for employees that were in previous periods, but not in this one
-		addMissingEmployeeMoods(weekData, weekIdx);
-	};
-	
-
-
-	/**
-	* divide sheet data in array per week
-	* @returns {array}
-	*/
-	const divideDataIntoWeeks = function(data) {
-		let lastWeekNr;
-		let weekData;
-
-		data.forEach((row) => {
-			const { weekNr, firstPollDayOfWeek, mondayOfWeek } = getRowWeekDateInfo(row);
-
-			if (!lastWeekNr || weekNr !== lastWeekNr) {
-				// first row for this week
-				weekData = {
-					weekNr,
-					firstPollDayOfWeek,
-					mondayOfWeek,
-					data: []
-				};
-				weekDatasets.push(weekData);
-				lastWeekNr = weekNr;
-			}
-			weekData.data.push(row);
-		});
-
-		return weekDatasets;
-	};
-
-
-	/**
-	* populate teams with employees
-	* @returns {undefined}
-	*/
-	const populateTeams = function() {
-		for(const [teamId, team] of Object.entries(teams)) {
-			if (teamId === teamAllId) {
-				team.employees = employees.filter((emp) => !formerEmployeeEmails.includes(emp.email));
-			} else {
-				team.employees = employees.filter((emp) => team.employeeEmails.includes(emp.email) && !formerEmployeeEmails.includes(emp.email));
-			}
-		};
-	};
-
-	/**
-	* get the currently selected team
-	* @returns {undefined}
-	*/
-	const getCurrentTeam = function() {
-		const teamIdx = teamSelector.value;
-		return teams[teamIdx];
-	};
-	
-	
-	
-
-	/**
-	* process the data so we can use it
-	* @returns {undefined}
-	*/
-	const processData = function(data) {
-		const weekDatasets = divideDataIntoWeeks(data);
-		// console.log('weekDatasets:', weekDatasets);
-		totalPeriods = weekDatasets.length;
-		setWeek();
-		
-		weekDatasets.forEach((weekData, weekIdx) => {
-			processWeekData(weekData, weekIdx);
-		});
-
-		populateTeams();
-	};
-
-
-
-	/**
-	* show an employee's detail info
-	* @returns {undefined}
-	* @param {d3 selection} employee - The employee's object
-	*/
-	const showEmployeeDetails = function(employee) {
-		console.log(employee);
-	};
-	
-
-
-	/**
-	* handle simulation tic
-	* @returns {undefined}
-	*/
-	const tickHandler = function(node) {
-		node.style('left', function(d) {
-				return d.x + 'px';
-			})
-			.style('top', function(d) {
-				return d.y + 'px';
-			})
-	};
-
-
-
-	/**
-	* show trace indicating previous period's mood
-	* @returns {undefined}
-	*/
-	const showMoodTrace = function() {
-		if (currPeriodIdx >= 0 && currPeriodIdx !== prevPeriodIdx) {
-			graphElm.querySelectorAll('.employee-node').forEach((elm, i) => {
-				const data = elm.__data__;
-				const currMood = data.periods[currPeriodIdx];
-
-				if (currMood.isFromThisWeek) {
-					const prevMood = data.periods[prevPeriodIdx];
-
-					// if happiness or business has changed, show trace
-					if (prevMood.happiness !== currMood.happiness || prevMood.business !== currMood.business) {
-
-						// add moodtrace element
-						const traceElm = document.createElement('div');
-						traceElm.classList.add('mood-trace');
-
-						//
-						const currLeft = parseInt(elm.style.left, 10);
-						const currTop = parseInt(elm.style.top, 10);
-						const prevLeft = happinessScale(prevMood.happiness);
-						const prevTop = businessScale(prevMood.business);
-						const dx = prevLeft - currLeft;// distance from curr to prev
-						const dy = prevTop - currTop;
-						const length = Math.sqrt(dx*dx + dy*dy);
-						const alphaRadians = Math.atan(dy/dx);
-
-						let alpha = alphaRadians * 180/Math.PI;
-						if (dx < 0) {
-							alpha += 180;
-						}
-
-						const changedStyle = {
-							left: currLeft + 'px',
-							top: currTop + 'px',
-							color: elm.style.color,
-							borderLeftWidth: length + 'px',
-							transform: 'translate(0, -50%) rotate('+alpha+'deg)'// use this with height
-						};
-						Object.assign(traceElm.style, changedStyle);
-
-						graphElm.appendChild(traceElm);
-					}
-				}
-			});
-		}
-	};
-
-
-
-	/**
-	* show a new answer to this period's question
-	* @returns {undefined}
-	*/
-	const showNewPeriodAnswer = function() {
-		clearTimeout(periodAnswerTimer);
-		const answers = periodQuestions[currPeriodIdx].answers;
-		const answer = answers[Math.floor(answers.length*Math.random())];
-
-		document.getElementById('period-answer').textContent = answer;
-		periodAnswerTimer = setTimeout(showNewPeriodAnswer, 8000);
-	};
-	
-
-	
-	/**
-	* show answers for current period
-	* @returns {undefined}
-	*/
-	const showPeriodAnswers = function() {
-		const answerBox = document.getElementById('period-remarks-box');
-		const questions = periodQuestions[currPeriodIdx];
-		const activeClass = 'period-remarks-box--is-visible';
-
-		if (questions.answers.length) {
-			answerBox.classList.add(activeClass);
-		} else {
-			answerBox.classList.remove(activeClass);
-		}
-			
-		document.getElementById('period-question').textContent = questions.question;
-		showNewPeriodAnswer();
-	};
-
-
-
-	/**
-	* schedule the stopping of the animation
-	* @returns {undefined}
-	*/
-	const scheduleSimulationStop = function() {
-		clearTimeout(simulationTimer);
-		simulationTimer = setTimeout(() => {
-			simulation.stop();
-			showMoodTrace();
-		}, simulationDuration);
-	};
-	
-	
-
-	/**
-	* draw the actual graph
-	* @returns {undefined}
-	*/
-	const drawGraph = function() {
-		// add shapes
-		selectedEmployees = getCurrentTeam().employees;
-		employeeNodes = graph.selectAll('.employee-node')
-			.data(selectedEmployees)
-			.enter()
-			.append('div')
-			.attr('data-initials', d => d.initials)
-			.attr('data-happiness', (d) => {
-				const firstPeriod = d.periods[0];
-				return firstPeriod.happiness;
-			})
-			.attr('data-business', (d) => {
-				const firstPeriod = d.periods[0];
-				return firstPeriod.business;
-			})
-			.attr('title', d => d.name)
-			.attr('class', 'employee-node')
-			.on('click', showEmployeeDetails)
-
-		// now that we have nodes on screen, we can check their dimensions
-		let typicalNode = graph.select('.employee-node:first-child').node();
-
-		nodeRadius = typicalNode.getBoundingClientRect().width/2;
-		nodeDistance = nodeRadius * 0.05;
-
-		simulation.nodes(selectedEmployees)
-			.on('tick', () => { tickHandler(employeeNodes) });
-		scheduleSimulationStop();
-		setTimeout(() => {changeWeek(+1);}, 1000);
-	};
+	const changeWeek = function(increment) {
+		initWeekDataToShow(increment);
+		updateWeekDisplay();
+		drawFilteredGraph();
+	}
 
 	/**
 	* 
 	* @returns {undefined}
 	*/
-	const changeTeam = function(elm) {
-		// const teamIdx = parseInt(elm.currentTarget.value, 10);
+	const changeTeam = function() {
 		document.getElementById('graph').innerHTML = '';
-		drawGraph();
+		drawFilteredGraph();
 	};
-	
-	
-
 
 	/**
 	* initialize interface
@@ -792,29 +368,178 @@
 			changeWeek(-1);
 		});
 
+		missingFilterToggle.addEventListener('change', drawFilteredGraph);
+		expiredFilterToggle.addEventListener('change', drawFilteredGraph);
+
 		// init team selector
-		const teamsArr = Object.entries(teams);
 		for (const [teamId, team] of Object.entries(teams)) {
-			let option = document.createElement('option');
-			option.textContent = team.name;
-			option.value = teamId;
-			teamSelector.appendChild(option);
+			if (team.name) {
+				let option = document.createElement('option');
+				option.textContent = team.name;
+				option.value = teamId;
+				teamSelector.appendChild(option);
+			}
 		};
 		teamSelector.addEventListener('change', changeTeam);
 	};
 
-
+	const getCurrentWeekAwnsers = function() {
+		answers = [];
+		weekDataToShow.employees.forEach((employee) => {
+			if (!employee.isMissingEntry && employee.answer) {
+				answers.push(employee.answer);
+			}
+		});
+		return answers;
+	}
 
 	/**
-	* set the current week
+	* show a new answer to this period's question
 	* @returns {undefined}
 	*/
-	const setWeek = function() {
-		currPeriodIdx = totalPeriods - 2;// we'll call changeWeek(+1) 1sec in the script
-		prevPeriodIdx = Math.max(currPeriodIdx -1, 0);
+	const showNewAnswer = function() {
+		clearTimeout(answerTimer);
+		if (!currentAnswer || answers.indexOf(currentAnswer) === answers.length - 1) {
+			currentAnswer = answers[0];
+		} else {
+			currentAnswer = answers[answers.indexOf(currentAnswer) + 1];
+		}
+		document.getElementById('period-answer').textContent = currentAnswer;
+		answerTimer = setTimeout(showNewAnswer, 6000);
 	};
 	
-	
+	/**
+	* show answers for current period
+	* @returns {undefined}
+	*/
+	const showAnswers = function() {
+		const answerBox = document.getElementById('period-remarks-box');
+		answers = getCurrentWeekAwnsers();
+		const activeClass = 'period-remarks-box--is-visible';
+
+		if (answers.length) {
+			answerBox.classList.add(activeClass);
+		} else {
+			answerBox.classList.remove(activeClass);
+		}
+			
+		// document.getElementById('period-question').textContent = 'Remarks';
+		showNewAnswer();
+	};
+
+
+// ---------------------------------------------------------------------------------
+// Data processing
+// ---------------------------------------------------------------------------------
+
+	/**
+	* get the currently selected team
+	* @returns {undefined}
+	*/
+	const getCurrentTeam = function() {
+		const teamIdx = teamSelector.value;
+		return teams[teamIdx];
+	};
+
+	const employeesfilterForCurrentTeam = function(employeesToFilter) {
+		if (getCurrentTeam().emails.length === 0) { return employeesToFilter }
+		const filteredEmployees = [];
+		employeesToFilter.forEach((employee) => {
+			const isBlacklisted = teams.blacklist.emails.indexOf(employee.email) !== -1;
+			const isInTeam = getCurrentTeam().emails.indexOf(employee.email) !== -1;
+			if (!isBlacklisted && isInTeam) {
+				filteredEmployees.push(employee);
+			}
+		})
+		return filteredEmployees;
+	}
+
+	const filterOutExpired = function(employeesToFilter) {
+		const team = employeesfilterForCurrentTeam(employeesToFilter);
+		return team.filter((employee) => { return !employee.isExpired });
+	}
+
+	const filterForMissing = function(employeesToFilter) {
+		const team = employeesfilterForCurrentTeam(employeesToFilter);
+		return team.filter((employee) => { return employee.isMissingEntry });
+	}
+
+	const initWeekDataToShow = function(increment = 0) {
+		const maxIndex = dividedWeekData.length - 1;
+		if (increment === 0) {
+			cWeekIdx = maxIndex;
+		} else if (increment > 0) {
+			cWeekIdx++;
+			if (cWeekIdx > maxIndex) {
+				cWeekIdx = maxIndex;
+			}
+		} else if (increment < 0) {
+			cWeekIdx--;
+			if (cWeekIdx < 0) {
+				cWeekIdx = 0;
+			}
+		}
+		weekDataToShow = dividedWeekData[cWeekIdx];
+
+		updateWeekDisplay();
+		showAnswers();
+	}
+
+	const addMissingEmployees = function() {
+		for (let i = 0; i < dividedWeekData.length - 1; i++) {
+			dividedWeekData[i].employees.forEach((employee) => {
+				// if (!employee.expired) {
+				const employeeFound = dividedWeekData[i+1].employees.find((knownEmployee) => {
+					return knownEmployee.email.toLowerCase() === employee.email.toLowerCase();
+				});
+				if (employeeFound === undefined) {
+					dividedWeekData[i+1].employees.push(employee.copyAsMissing());
+				}
+				// }
+			});
+		}
+	}
+
+	const addAverageData = function() {
+		dividedWeekData.forEach((weekData) => {
+			let validEntries = 0;
+			let totalHappiness = 0;
+			let totalBusiness = 0;
+			weekData.employees.forEach((employee) => {
+				if (!employee.isMissingEntry) {
+					validEntries++;
+					totalHappiness += employee.happinessScore;
+					totalBusiness += employee.businessScore;
+				}
+			})
+			weekData.employees.push(new EmployeeData(
+				undefined,
+				Math.round(totalBusiness / validEntries),
+				Math.round(totalHappiness / validEntries)
+			))
+		});
+	}
+
+	/**
+	* divide sheet data in array per week
+	* @returns {array}
+	*/
+	const divideWeekData = function(data) {
+		data.forEach((row) => {
+			const { weekNr, mondayOfWeek } = getRowWeekDateInfo(row);
+			let existingWeekData = dividedWeekData.find((weekData) => {
+				return weekData.weekNumber === weekNr;
+			});
+			if (existingWeekData === undefined) {
+				dividedWeekData.push(new WeekData(weekNr, mondayOfWeek));
+				existingWeekData = dividedWeekData[dividedWeekData.length - 1];
+			}
+			dividedWeekData[dividedWeekData.indexOf(existingWeekData)].addEmployee(row);
+		});
+		addAverageData();
+		addMissingEmployees();
+		return dividedWeekData;
+	}
 
 	//-- Start helper functions
 
@@ -838,7 +563,6 @@
 			return [d.getUTCFullYear(), weekNo];
 		}
 
-
 		/**
 		* get the week number for an entry in the sheet
 		* @param {array} row - A row in the sheet
@@ -854,15 +578,12 @@
 			const tm = new Date(year, month, day);
 			const weekNr = getWeekNumber(tm)[1];
 			const mondayOfWeek = getDateOfISOWeek(weekNr, year);
-			const firstPollDayOfWeek = getFridayBeforeThisWeek(weekNr, year);// first day you could fill in the form
 
 			return {
 				weekNr,
-				mondayOfWeek,
-				firstPollDayOfWeek
+				mondayOfWeek
 			};
 		};
-
 
 		/**
 		* get Monday of week by week number
@@ -871,11 +592,11 @@
 		* @param {number} year
 		* @returns {Date}
 		*/
-		function getDateOfISOWeek(weekNr, year) {
+		const getDateOfISOWeek = function(weekNr, year) {
 			var simple = new Date(year, 0, 1 + (weekNr - 1) * 7);
 			var dayOfWeek = simple.getDay();
 			var ISOweekStart = simple;
-			if (dayOfWeek <= 4) {
+			if (dayOfWeek <= 2) {
 				ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
 			} else {
 				ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
@@ -883,98 +604,107 @@
 			return ISOweekStart;
 		}
 
-		/**
-		* get the Friday of the week before the current one - that's when you can start filling out the form for the current week
-		* @param {Date} monday - The Monday of the current week
-		* @returns {Date}
-		*/
-		const getFridayBeforeThisWeek = function(weekNr, year) {
-			const monday = getDateOfISOWeek(weekNr, year);
-			const mondayTimestamp = +monday;
-			const fridayTimestamp = mondayTimestamp - 3*24*3600*1000;
-			const friday = new Date(fridayTimestamp);
-			
-			return friday;
-		};
-		
-		
-
 	//-- End helper functions
 
-
-	//-- Start google sheets stuff
-
-
-		/**
-		* read data from the sheet
-		* @returns {undefined}
-		*/
-		const readData = function() {
-			const spreadsheetId = '1K4YbGsCSSIJhB0nYArs0XouoOqT1xGyM2KWOdny-tLs';
-			const sheetHappinessTabName = 'Team happiness responses';
-			const happinessCellRange = 'A2:Z';// all columns, skip 1st row with titles
-			const happinessRange = `'${sheetHappinessTabName}'!${happinessCellRange}`;// range in a1 notation https://developers.google.com/sheets/api/guides/concepts#a1_notation
-			const sheetTeamTabName = 'Teams in happiness chart';
-			const teamsRange = `'${sheetTeamTabName}'!2:10000`;// range in a1 notation 
-
-			const happinessPromise = sheetHelper.getData({spreadsheetId, range: happinessRange});
-			const teamsPromise = sheetHelper.getData({spreadsheetId, range: teamsRange, majorDimension:'COLUMNS'});
-
-			Promise.all([teamsPromise, happinessPromise])
-				.then((results) => {
-					const teams = results[0].values;
-					const happinessData = results[1].values;
-
-					initTeams(teams);
-					processData(happinessData);
-					initInterface();
-					drawGraph();
+	/**
+	* create teams objects
+	* @returns {undefined}
+	*/
+	const initTeams = function(teamsData) {
+		teamsData.forEach((teamData) => {
+			if (teamData[0] === excludeFromChartId) {
+				teamData.forEach((value, i) => {
+					if (i > 0) {
+						teams.blacklist.addEmail(value)
+					}
 				});
-		
-			// get data in promise
-			// sheetHelper.getData(happinessOptions)
-			// .then((result) => {
-			// 	const data = result.values;
-			// 	processData(data);
-			// 	initInterface();
-			// 	drawGraph();
-			// });
-
-		};
-		
-		
-		/**
-		* get data from google sheet
-		* @returns {undefined}
-		*/
-		const getSheetHelper = function() {
-			// use api key etc from window.secretStuff (which is not in version control)
-			const sheetOptions = {
-				CLIENT_ID: window.secretStuff.CLIENT_ID,
-				API_KEY: window.secretStuff.API_KEY
-			};
-		
-			sheetHelper = window.createGoogleSheetsHelper(sheetOptions);
-		};
-		
-		
-	//-- End google sheets stuff
-
-
+			} else {
+				const team = new Team(teamData[0])
+				teamData.forEach((value, i) => {
+					if (i > 0) {
+						team.addEmail(value);
+					}
+				});
+				teams[team.name] = team;
+			}
+		});
+	};
 
 	/**
-	* initialize all functionality
+	 * 
+	 * @param {array} data
+	 * @returns {undefined}
+	 */
+	const prepareDataToDisplay = function(data) {
+		divideWeekData(data);
+		initWeekDataToShow();
+	}
+
+
+// ---------------------------------------------------------------------------------
+// Script kickoff and initialization
+// ---------------------------------------------------------------------------------
+
+	/**
+	 * reads teams data from sheet
+	 * @returns {promise} promise response's result-property
+	 */
+	const readTeamsData = function() {
+		const sheetTeamTabName = 'Teams in happiness chart';
+		const teamsRange = `'${sheetTeamTabName}'!2:10000`;// range in a1 notation 
+		return sheetHelper.getData({spreadsheetId, range: teamsRange, majorDimension:'COLUMNS'});
+	}
+
+	/**
+	 * reads happiness data from sheet
+	 * @returns {promise} promise response's result-property
+	 */
+	const readHappinessData = function() {
+		const sheetHappinessTabName = 'Team happiness responses';
+		const happinessCellRange = 'A2:Z';// all columns, skip 1st row with titles
+		const happinessRange = `'${sheetHappinessTabName}'!${happinessCellRange}`;// range in a1 notation https://developers.google.com/sheets/api/guides/concepts#a1_notation
+		return sheetHelper.getData({spreadsheetId, range: happinessRange});
+	}
+
+	/**
+	 * kicks off data processing and page construction once data promises are resolved
+	 * @returns {undefined}
+	 */
+	const processPage = function() {
+		Promise.all([readTeamsData(), readHappinessData()])
+			.then((results) => {
+				const teams = results[0].values;
+				const happinessData = results[1].values;
+				initTeams(teams);
+				initInterface();
+				prepareDataToDisplay(happinessData);
+				drawFilteredGraph();
+			});
+	}
+
+	/**
+	* gets data from google sheet
+	* @returns {undefined}
+	*/
+	const getSheetHelper = function() {
+		// use api key etc from window.secretStuff (which is not in version control)
+		const sheetOptions = {
+			CLIENT_ID: window.secretStuff.CLIENT_ID,
+			API_KEY: window.secretStuff.API_KEY
+		};
+	
+		sheetHelper = window.createGoogleSheetsHelper(sheetOptions);
+	};
+
+	/**
+	* initializes all functionality
 	* @returns {undefined}
 	*/
 	const init = function() {
-		document.body.addEventListener('googlesheethelperenabled', readData);
+		document.body.addEventListener('googlesheethelperenabled', processPage);
 		getSheetHelper();
 	};
 
-
-
-	// kick of the script when all dom content has loaded
+	// kicks of the script when all dom content has loaded
 	document.addEventListener('DOMContentLoaded', init);
-
 })();
-
