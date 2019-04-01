@@ -1,3 +1,4 @@
+// Init weight scores range, min and max values for happiness and business axis
 const happinessHealthScores = [-2, -1, 0, 1, 2];
 const businessHealthScores = [-2, -1, 0, -1, -2];
 const minHappinessHealthScore = Math.min(...happinessHealthScores);
@@ -7,9 +8,18 @@ const maxHappinessHealthScore = Math.max(...happinessHealthScores);
 const maxBusinessHealthScore = Math.max(...businessHealthScores);
 const maxHealthScore = maxHappinessHealthScore + maxBusinessHealthScore;
 
+// Init name insertions
 const knownInsertions = ['de', 'den', 'der', 'van', 'vd', 'op', 't', 'vande', 'vanden', 'vander', 'opt'];
 
 class EmployeeData {
+		/**
+	 * @param {string} email Email address of the employee
+	 * @param {number} businessScore Business value based on 1 to 5 range
+	 * @param {number} happinessScore Happiness value based on 1 to 5 range
+	 * @param {string} answer Answer to form question
+	 * @param {boolean} isMissingEntry Boolean indicating if instance represents an expected yet absent submission, optional and used in class only, use method copyAsMissing instead
+	 * @param {number} missedEntries Number identifing instance copy count, optional and used in class only, use method copyAsMissing instead
+	 */
 	constructor(email, businessScore, happinessScore, answer = '', isMissingEntry = false, missedEntries = 0) {
 		if (email === undefined) {
 			this.email = 'Average'
@@ -22,15 +32,24 @@ class EmployeeData {
 
 		this.isMissingEntry = isMissingEntry;
 		this.missedEntries = missedEntries;
+
+		// determines if instance is copied more then a maximum, expired entries are not shown by default
 		this.isExpired = this.missedEntries > 8;
 	}
 
+	/**
+	 * Initialization of name initials and processed health score
+	 * @returns {EmployeeData} This instance
+	 */
 	init() {
 		this.initials = this.getInitials();
 		this.health = this.getHealthScore();
 		return this;
 	}
 
+	/**
+	 * @returns {EmployeeData} Copy of current instance as missing entry and incrementing missingEntries count
+	 */
 	copyAsMissing() {
 		return new EmployeeData(
 			this.email,
@@ -42,16 +61,25 @@ class EmployeeData {
 		).init();
 	}
 
+	/**
+	 * @returns {Array<string>} Name based on email in parts seperated by '.'
+	 */
 	getNameInParts() {
 		return this.email.split('@')[0].split('.');
 	}
 
+	/**
+	 * @returns {string} First name
+	 */
 	getFirstName() {
 		const nameInParts = this.getNameInParts();
 		const firstLetter = nameInParts[0].charAt(0).toUpperCase();
 		return firstLetter + nameInParts[0].slice(1);
 	}
 	
+	/**
+	 * @returns {Array<string>} All found name insertions
+	 */
 	getInsertions() {
 		const nameInParts = this.getNameInParts();
 		const middleNames = [];
@@ -66,6 +94,9 @@ class EmployeeData {
 		return middleNames;
 	}
 
+	/**
+	 * @returns {Array<string>} All last names
+	 */
 	getLastNames() {
 		const lastNameParts = this.getNameInParts().slice(1);
 		const lastNames = [];
@@ -81,6 +112,9 @@ class EmployeeData {
 		return lastNames;
 	}
 
+	/**
+	 * @returns {string} First letter of first name, all insertions and the first last name
+	 */
 	getInitials() {
 		if (this.email === 'Average') {	return 'Avg' }
 
@@ -97,6 +131,9 @@ class EmployeeData {
 		return initials;
 	}
 
+	/**
+	 * @returns {string} Full name
+	 */
 	getNeatName() {
 		if (this.email === 'Average') { return this.email }
 		const firstName = this.getFirstName();
@@ -117,6 +154,9 @@ class EmployeeData {
 		return businessHealthScores[this.businessScore - 1] + happinessHealthScores[this.happinessScore - 1];
 	}
 
+	/**
+	 * @returns {string} Color value based on health score
+	 */
 	getColor() {
 		if (this.email === 'Average') { return '#60aaff' }
 		// https://gka.github.io/palettes/#colors=#fc0,green|steps=4|bez=1|coL=1

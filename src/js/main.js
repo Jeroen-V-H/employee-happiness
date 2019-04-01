@@ -502,21 +502,7 @@
 
 	const addAverageData = function() {
 		dividedWeekData.forEach((weekData) => {
-			let validEntries = 0;
-			let totalHappiness = 0;
-			let totalBusiness = 0;
-			weekData.employees.forEach((employee) => {
-				if (!employee.isMissingEntry) {
-					validEntries++;
-					totalHappiness += employee.happinessScore;
-					totalBusiness += employee.businessScore;
-				}
-			})
-			weekData.employees.push(new EmployeeData(
-				undefined,
-				Math.round(totalBusiness / validEntries),
-				Math.round(totalHappiness / validEntries)
-			))
+			weekData.addAverage();
 		});
 	}
 
@@ -525,13 +511,24 @@
 	* @returns {array}
 	*/
 	const divideWeekData = function(data) {
+		const lastWeek = { weekNr: 0,	year: 0	};
+		let existingWeekData;
 		data.forEach((row) => {
-			const { weekNr, mondayOfWeek } = getRowWeekDateInfo(row);
-			let existingWeekData = dividedWeekData.find((weekData) => {
-				return weekData.weekNumber === weekNr;
-			});
+			let { weekNr, year, nextMonday } = getRowWeekDateInfo(row);
+			
+			if (weekNr !== lastWeek.weekNr) {
+				if (year !== lastWeek.year) {
+					weekNr += lastWeek.weekNr;
+				}
+				existingWeekData = dividedWeekData.find((weekData) => {
+					return weekData.weekNumber === weekNr;
+				});
+			}
+
 			if (existingWeekData === undefined) {
-				dividedWeekData.push(new WeekData(weekNr, mondayOfWeek));
+				dividedWeekData.push(new WeekData(weekNr, year, nextMonday));
+				lastWeek.weekNr = weekNr;
+				lastWeek.year = year;
 				existingWeekData = dividedWeekData[dividedWeekData.length - 1];
 			}
 			dividedWeekData[dividedWeekData.indexOf(existingWeekData)].addEmployee(row);
@@ -576,14 +573,21 @@
 			const month = parseInt(tmStr.substr(3, 2), 10) -1;
 			const year = parseInt(tmStr.substr(6, 4), 10);
 			const tm = new Date(year, month, day);
-			const weekNr = getWeekNumber(tm)[1];
-			const mondayOfWeek = getDateOfISOWeek(weekNr, year);
+			const nextMonday = getMondayOfNextWeek(tm);
+			const weekNr = getWeekNumber(nextMonday)[1];
 
 			return {
 				weekNr,
-				mondayOfWeek
+				year,
+				nextMonday
 			};
 		};
+
+		const getMondayOfNextWeek = function(date) {
+			const newDate = new Date(date.getTime());
+			newDate.setDate(newDate.getDate() + (8 - newDate.getDay()) % 7);
+			return newDate;
+		}
 
 		/**
 		* get Monday of week by week number
@@ -631,7 +635,7 @@
 	};
 
 	/**
-	 * 
+	 * process complete dataset and prepare correct weekdataset for graph
 	 * @param {array} data
 	 * @returns {undefined}
 	 */
