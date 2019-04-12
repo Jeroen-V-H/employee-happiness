@@ -38,6 +38,6 @@ Thumbs.db
 
 # Project specific files and folders #
 ######################################
-docs/js/zup.js
+# docs/js/zup.js
 backupOld
 node_modules
